@@ -41,7 +41,7 @@ public class MapData {
 
         mapData.cmPerDisplayWidth = 150;
 
-        mapData.cameraStartingPosition = new Vector3(-10,0,0);
+        mapData.cameraStartingPosition = new Vector3(0,0,0);
 
         mapData.ballRadius = 5;
         mapData.ballStartingPosition = new Vector3(0,0,0);
@@ -50,14 +50,16 @@ public class MapData {
         mapData.walls = new Array<Wall>();
         Wall tempWall = new Wall(0,0,50,10,0);
         mapData.walls.add(tempWall);
-        tempWall = new Wall(-50,-20,50,20,0);
+        tempWall = new Wall(-52,-20,50,20,0);
         mapData.walls.add(tempWall);
 
         // create Grounds
         mapData.grounds = null;
 
         // create holes
-        mapData.holes = null;
+        mapData.holes = new Array<Hole>();
+        Hole tempHole = new Hole(0,50,10);
+        mapData.holes.add(tempHole);
 
         return mapData;
     }

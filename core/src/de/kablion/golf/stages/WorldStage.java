@@ -85,7 +85,10 @@ public class WorldStage extends Stage {
         }
         walls = mapData.getWalls();
         if(walls != null){
-            for (int i=0; i<walls.size;i++) root.addActor(walls.get(i));
+            for (int i=0; i<walls.size;i++){
+                walls.get(i).setTexture(app.assets.get("badlogic.jpg",Texture.class));
+                root.addActor(walls.get(i));
+            }
         }
         holes = mapData.getHoles();
         if(holes != null){
@@ -96,41 +99,6 @@ public class WorldStage extends Stage {
         for (int i=0; i<playerAmount;i++){
             //balls.add(new Ball(mapData.getBallRadius(), mapData.getBallStartingPosition()));
         }
-
-    }
-
-    public void createDebugMap() {
-        par = 2;
-        maxShootSpeed = 5;
-
-        float cmPerWidth = 150;
-
-        float aspectRatio = Gdx.graphics.getHeight() / Gdx.graphics.getHeight();
-        Viewport view = new ExtendViewport(cmPerWidth, cmPerWidth*aspectRatio);
-        setViewport(view);
-        getCamera().position.set(0,0,0);
-        getCamera().update();
-
-        balls = new Array<Ball>();
-        for (int i=0; i<playerAmount;i++){
-            // Load balls
-            balls.add(new Ball(5,0,-40));
-        }
-
-        // create Walls
-        walls = new Array<Wall>();
-        Wall tempWall = new Wall(0,0,50,20,0);
-        root.addActor(tempWall);
-        walls.add(tempWall);
-
-
-        // Debug Image
-        debug = new Image(app.assets.get("badlogic.jpg", Texture.class));
-        debug.setSize(256,256);
-        debug.setPosition(0,0);
-        debug.setVisible(true);
-        root.addActor(debug);
-
 
     }
 
