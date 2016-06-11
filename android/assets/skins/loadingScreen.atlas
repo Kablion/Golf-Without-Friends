@@ -1,0 +1,19 @@
+loadingScreen.png
+size: 2, 100
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bar_empty
+  rotate: false
+  xy: 0, 0
+  size: 2, 50
+  orig: 2, 50
+  offset: 0, 0
+  index: -1
+bar_filled
+  rotate: false
+  xy: 0, 50
+  size: 2, 50
+  orig: 2, 50
+  offset: 0, 0
+  index: -1
