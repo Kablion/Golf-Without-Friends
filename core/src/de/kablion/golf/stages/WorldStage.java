@@ -1,12 +1,14 @@
 package de.kablion.golf.stages;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.IntFloatMap;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
@@ -63,13 +65,9 @@ public class WorldStage extends Stage {
         ExtendViewport view = new ExtendViewport(mapData.getCmPerDisplayWidth(), mapData.getCmPerDisplayWidth()*aspectRatio);
         setViewport(view);
         getCamera().position.set(mapData.getCameraStartingPosition());
-        balls = null;
-        for (int i=0; i<playerAmount;i++){
-            //balls.add(new Ball(mapData.getBallRadius(), mapData.getBallStartingPosition()));
-        }
 
         // Debug Image
-        debug = new Image(app.assets.get("badlogic.jpg", Texture.class));
+        /*debug = new Image(app.assets.get("badlogic.jpg", Texture.class));
         debug.setSize(256,256);
         debug.setPosition(0,0);
         debug.setVisible(true);
@@ -79,19 +77,24 @@ public class WorldStage extends Stage {
         debug2.setSize(256,256);
         debug2.setPosition(-256,-256);
         debug2.setVisible(true);
-        root.addActor(debug2);
+        root.addActor(debug2);*/
 
-        walls = mapData.getWalls();
-        if(walls != null){
-            for (int i=0; i<walls.size;i++) root.addActor(walls.get(i));
-        }
         grounds = mapData.getGrounds();
         if(grounds != null){
             for (int i=0; i<grounds.size;i++) root.addActor(grounds.get(i));
         }
+        walls = mapData.getWalls();
+        if(walls != null){
+            for (int i=0; i<walls.size;i++) root.addActor(walls.get(i));
+        }
         holes = mapData.getHoles();
         if(holes != null){
             for (int i=0; i<holes.size;i++) root.addActor(holes.get(i));
+        }
+
+        balls = null;
+        for (int i=0; i<playerAmount;i++){
+            //balls.add(new Ball(mapData.getBallRadius(), mapData.getBallStartingPosition()));
         }
 
     }
@@ -134,7 +137,22 @@ public class WorldStage extends Stage {
     @Override
     public void act() {
         super.act();
-        getCamera().position.add(0.5f);
+
+        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
+            getCamera().position.sub(1,0,0);
+        }
+
+        if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
+            getCamera().position.add(1,0,0);
+        }
+
+        if(Gdx.input.isKeyPressed(Input.Keys.UP)){
+            getCamera().position.sub(0,1,0);
+        }
+
+        if(Gdx.input.isKeyPressed(Input.Keys.DOWN)){
+            getCamera().position.add(0,1,0);
+        }
     }
 
     @Override

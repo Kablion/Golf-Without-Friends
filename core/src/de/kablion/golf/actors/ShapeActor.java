@@ -34,11 +34,14 @@ public class ShapeActor extends Actor {
     //Position attribute - (x, y)
     public static final int POSITION_COMPONENTS = 2;
 
-    //Color attribute - (u, v)
-    public static final int UV_COMPONENTS = 2;
+    //Color attribute - floatBits(r, g, b, a)
+    public static final int COLOR_COMPONENTS = 1;
+
+    //Texture attribute - (u, v)
+    public static final int TEXTURE_COMPONENTS = 2;
 
     //Total number of components for all attributes
-    public static final int NUM_COMPONENTS = POSITION_COMPONENTS;
+    public static final int NUM_COMPONENTS = POSITION_COMPONENTS + COLOR_COMPONENTS + TEXTURE_COMPONENTS;
 
     public static final int NONE = 0;
     public static final int CIRCLE = 1;
@@ -50,7 +53,6 @@ public class ShapeActor extends Actor {
     private int type;
     private Texture texture;
     private Mesh mesh;
-    private ShaderProgram shader;
 
     public ShapeActor(Shape2D shape, float positionX, float positionY) {
         super();
@@ -82,128 +84,18 @@ public class ShapeActor extends Actor {
 
     private void init() {
         setColor(Color.PINK);
-        this.shader = createMeshShader();
-    }
-
-    protected ShaderProgram createMeshShader() {
-        final String VERT_SHADER =
-                "attribute vec"+POSITION_COMPONENTS+" "+ShaderProgram.POSITION_ATTRIBUTE+";\n" +
-                        //"attribute vec"+UV_COMPONENTS+" "+ShaderProgram.TEXCOORD_ATTRIBUTE+";\n" +
-                        "uniform mat4 u_projTrans;\n" +
-                        "varying vec4 vColor;\n" +
-                        "void main() {\n" +
-                        "	gl_Position =  u_projTrans * vec4(a_position.xy, 0.0, 1.0);\n" +
-                        "}";
-
-        final String FRAG_SHADER =
-                "#ifdef GL_ES\n" +
-                        "precision mediump float;\n" +
-                        "#endif\n"+
-                        "void main() {\n" +
-                        "   gl_FragColor = vec4("+getColor().r+", "+getColor().g+", "+getColor().b+", "+getColor().a+");\n" +
-                        "}";
-
-        ShaderProgram.pedantic = false;
-        ShaderProgram shader = new ShaderProgram(VERT_SHADER,FRAG_SHADER);
-        String log = shader.getLog();
-        if (!shader.isCompiled())
-            throw new GdxRuntimeException(log);
-        if (log!=null && log.length()!=0)
-            System.out.println("Shader Log: "+log);
-        return shader;
-    }
-
-    private void updateMesh() {
-        this.mesh = null;
-        if(type == NONE) {
-
-        }else if(type == CIRCLE) {
-
-        }else if(type == RECTANGLE) {
-            Rectangle rect = ((Rectangle)shape);
-            float[] meshVertices = new float[4*NUM_COMPONENTS];
-            int i = 0;
-
-            // Bottom Left
-            meshVertices[i++] = rect.getX();
-            meshVertices[i++] = rect.getY();
-
-            // Top Left
-            meshVertices[i++] = rect.getX();
-            meshVertices[i++] = rect.getY()+rect.getHeight();
-
-            // Top Right
-            meshVertices[i++] = rect.getX()+rect.getWidth();
-            meshVertices[i++] = rect.getY()+rect.getHeight();
-
-            // Bottom Right
-            meshVertices[i++] = rect.getX()+rect.getWidth();
-            meshVertices[i++] = rect.getY();
-
-            short[] indices = new short[]{ 0, 1, 2, 2, 3, 0}; // two triangles
-
-            this.mesh = new Mesh( true, 4, 6,  // static mesh with 4 vertices and 6 indices
-                    new VertexAttribute( VertexAttributes.Usage.Position, POSITION_COMPONENTS, ShaderProgram.POSITION_ATTRIBUTE ) );
-            this.mesh.setVertices(meshVertices);
-            this.mesh.setIndices(indices);
-        }else if(type == POLYGON) {
-            float[] vertices = ((Polygon)shape).getVertices();
-            float[] meshVertices = new float[(vertices.length/2+1)*5];
-            // Origin Verter For Drawing Triangle_Fan
-            meshVertices[0] = 0;
-            meshVertices[1] = 0;
-
-            for (int i=0;i< vertices.length;i+=2) {
-                int vertex = i/2+1;
-                meshVertices[vertex*NUM_COMPONENTS] = vertices[i];
-                meshVertices[vertex*NUM_COMPONENTS+1] = vertices[i+1];
-            }
-
-            short[] indices = new short[meshVertices.length/NUM_COMPONENTS];
-            for (int i=0; i<meshVertices.length;i+=NUM_COMPONENTS){
-                indices[i/NUM_COMPONENTS] = (short)(i/NUM_COMPONENTS);
-            }
-
-            this.mesh = new Mesh( true, meshVertices.length/NUM_COMPONENTS, meshVertices.length/NUM_COMPONENTS,  // static mesh with vertices.length/2 vertices and no indices
-                    new VertexAttribute( VertexAttributes.Usage.Position, POSITION_COMPONENTS, ShaderProgram.POSITION_ATTRIBUTE ) );
-            this.mesh.setVertices(meshVertices);
-            this.mesh.setIndices(indices);
-        }
-
-        this.shader = createMeshShader();
     }
 
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
-        batch.end();
-        if(getType() == RECTANGLE) {
-            //no need for depth...
-            Gdx.gl.glDepthMask(false);
-
-            //enable blending, for alpha
-            Gdx.gl.glEnable(GL20.GL_BLEND);
-            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-
+        if(mesh != null) {
             //number of vertices we need to render
             int indicesCount = (mesh.getNumIndices());
 
-            //start the shader before setting any uniforms
-            shader.begin();
-
-            //update the projection matrix so our triangles are rendered in 2D
-            shader.setUniformMatrix("u_projTrans", batch.getProjectionMatrix());
-
             //render the mesh
-            mesh.render(shader, GL20.GL_TRIANGLE_FAN, 0, indicesCount);
-
-            shader.end();
-
-            //re-enable depth to reset states to their default
-            Gdx.gl.glDepthMask(true);
-
+            mesh.render(batch.getShader(), GL20.GL_TRIANGLE_FAN, 0, indicesCount);
         }
-        batch.begin();
     }
 
     @Override
@@ -288,11 +180,97 @@ public class ShapeActor extends Actor {
         }
     }
 
-    public void setTexture(Texture texture) {
-        this.texture = texture;
+    private void updateMesh() {
+        this.mesh = null;
+        if(type == NONE) {
+
+        }else {
+            float[] meshVertices = null;
+            short[] indices = null;
+            int i = 0; // Index of meshVertices Array
+            int currentVertex = 0; // increments after every full Vertex
+            float bitColor = getColor().toFloatBits();
+
+            if(type == CIRCLE) {
+
+            }else if(type == RECTANGLE) {
+                Rectangle rect = ((Rectangle)shape);
+                meshVertices = new float[4*NUM_COMPONENTS];
+
+                // Bottom Left
+                meshVertices[i++] = rect.getX();
+                meshVertices[i++] = rect.getY();
+                meshVertices[i++] = bitColor;
+                meshVertices[i++] = 0;
+                meshVertices[i++] = 0;
+                currentVertex++;
+
+                // Top Left
+                meshVertices[i++] = rect.getX();
+                meshVertices[i++] = rect.getY()+rect.getHeight();
+                meshVertices[i++] = bitColor;
+                meshVertices[i++] = 0;
+                meshVertices[i++] = 0;
+                currentVertex++;
+
+                // Top Right
+                meshVertices[i++] = rect.getX()+rect.getWidth();
+                meshVertices[i++] = rect.getY()+rect.getHeight();
+                meshVertices[i++] = bitColor;
+                meshVertices[i++] = 0;
+                meshVertices[i++] = 0;
+
+                currentVertex++;
+
+                // Bottom Right
+                meshVertices[i++] = rect.getX()+rect.getWidth();
+                meshVertices[i++] = rect.getY();
+                meshVertices[i++] = bitColor;
+                meshVertices[i++] = 0;
+                meshVertices[i++] = 0;
+                currentVertex++;
+
+            }else if(type == POLYGON) {
+
+                float[] vertices = ((Polygon)shape).getVertices();
+                meshVertices = new float[(vertices.length/2+1)*5];
+
+                // Origin Vertex For Drawing Triangle_Fan
+                meshVertices[i++] = 0;
+                meshVertices[i++] = 0;
+                meshVertices[i++] = bitColor;
+                meshVertices[i++] = 0;
+                meshVertices[i++] = 0;
+                currentVertex++;
+
+                for (int j=0;j< vertices.length;j+=2) {
+                    meshVertices[i++] = vertices[j];
+                    meshVertices[i++] = vertices[j+1];
+                    meshVertices[i++] = bitColor;
+                    meshVertices[i++] = 0;
+                    meshVertices[i++] = 0;
+                    currentVertex++;
+                }
+            }
+
+            if(meshVertices != null) {
+
+                indices = new short[currentVertex];
+                for (int j=0; j<currentVertex;j++){
+                    indices[j] = (short)(j);
+                }
+
+                this.mesh = new Mesh(false, meshVertices.length / NUM_COMPONENTS, indices.length,
+                        new VertexAttribute(VertexAttributes.Usage.Position, POSITION_COMPONENTS, ShaderProgram.POSITION_ATTRIBUTE),
+                        new VertexAttribute(VertexAttributes.Usage.ColorPacked, 4, ShaderProgram.COLOR_ATTRIBUTE),
+                        new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, TEXTURE_COMPONENTS, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"));
+                this.mesh.setVertices(meshVertices);
+                this.mesh.setIndices(indices);
+            }
+        }
     }
 
-    private void updatePolygonRenderer() {
-
+    public void setTexture(Texture texture) {
+        this.texture = texture;
     }
 }
