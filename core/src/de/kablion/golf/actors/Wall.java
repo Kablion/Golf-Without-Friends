@@ -26,14 +26,4 @@ public class Wall extends ShapeActor {
         setColor(Color.BROWN);
         setShape(findShape(polygonPoints, x, y));
     }
-
-    /*public Wall(float fromX, float fromY, float toX, float toY, float width) {
-        super();
-        Vector2 center = new Vector2((toX-fromX)/2,(toY-fromY)/2);
-        setPosition(center.x, center.y);
-        float length = center.dst(fromX,fromY)*2;
-        float angle = center.sub(fromX,fromY).angle();
-        setRotation(angle);
-        setColor(Color.BROWN);
-    }*/
 }

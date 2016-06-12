@@ -10,6 +10,7 @@ public class DesktopLauncher {
 		config.title = "Golf Without Friends";
 		config.width = 480;
 		config.height = 800;
-		new LwjglApplication(new Application(), config);
+        config.samples = 8;
+        new LwjglApplication(new Application(), config);
 	}
 }

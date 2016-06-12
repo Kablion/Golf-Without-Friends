@@ -11,8 +11,6 @@ import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
-import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo;
 import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.EllipseShapeBuilder;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Circle;
@@ -31,7 +29,7 @@ public class ShapeActor extends Actor {
     public static final int POSITION_COMPONENTS = 2;
 
     //Color attribute - floatBits(r, g, b, a)
-    public static final int COLOR_COMPONENTS = 1;
+    public static final int COLOR_COMPONENTS = 4;
 
     //Texture attribute - (u, v)
     public static final int TEXTURE_COMPONENTS = 2;
@@ -46,13 +44,18 @@ public class ShapeActor extends Actor {
     public static final int NONE = 0;
     public static final int CIRCLE = 1;
     public static final int RECTANGLE = 2;
-    public static final int POLYGON = 3;
+    public static final int TRIANGLE = 3;
+    public static final int POLYGON = 4;
 
 
     private Shape2D shape;
     private int type;
     private Texture texture;
     private Mesh mesh;
+
+    private boolean repeatTexture;
+    private float textureWidth;
+    private float textureHeight;
 
     private Texture colorTexture;
 
@@ -89,9 +92,11 @@ public class ShapeActor extends Actor {
 
         if (polygonPoints == null | polygonPoints.size == 0) {
             return null;
+
         } else if (polygonPoints.size == 1) {
             // type = CIRCLE;
             result = new Circle(positionX, positionY, polygonPoints.get(0).len());
+
         } else if (polygonPoints.size == 2) {
             // type = RECTANGLE;
             result = new Rectangle();
@@ -100,6 +105,17 @@ public class ShapeActor extends Actor {
             float width = polygonPoints.get(1).x - polygonPoints.get(0).x;
             float height = polygonPoints.get(1).y - polygonPoints.get(0).y;
             result = new Rectangle(x, y, width, height);
+
+        } else if (polygonPoints.size == 3) {
+            // type = TRIANGLE;
+            float[] vertices = new float[polygonPoints.size * 2];
+            for (int i = 0; i < polygonPoints.size; i++) {
+                vertices[i * 2] = polygonPoints.get(i).x;
+                vertices[i * 2 + 1] = polygonPoints.get(i).y;
+            }
+            result = new Polygon(vertices);
+            ((Polygon) result).setPosition(positionX, positionY);
+
         } else {
             // type = POLYGON;
             float[] vertices = new float[polygonPoints.size * 2];
@@ -116,22 +132,6 @@ public class ShapeActor extends Actor {
         return result;
     }
 
-    @Override
-    public void setColor(Color color) {
-        super.setColor(color);
-        Pixmap pixmap = new Pixmap(1,1, Pixmap.Format.RGB888);
-        pixmap.setColor(getColor());
-        this.colorTexture = new Texture(pixmap);
-    }
-
-    @Override
-    public void setColor(float r, float g, float b, float a) {
-        super.setColor(r, g, b, a);
-        Pixmap pixmap = new Pixmap(1,1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(getColor());
-        this.colorTexture = new Texture(pixmap);
-    }
-
     private static int findShapeType(Shape2D shape) {
         int result;
 
@@ -142,12 +142,36 @@ public class ShapeActor extends Actor {
         } else if (shape instanceof Rectangle) {
             result = RECTANGLE;
         } else if (shape instanceof Polygon) {
-            result = POLYGON;
+            if (((Polygon) shape).getVertices().length == 6) {
+                result = TRIANGLE;
+            } else {
+                result = POLYGON;
+            }
         } else {
             result = NONE;
         }
 
         return result;
+    }
+
+    @Override
+    public void setColor(Color color) {
+        super.setColor(color);
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(getColor());
+        pixmap.fill();
+        this.colorTexture = new Texture(pixmap);
+        pixmap.dispose();
+    }
+
+    @Override
+    public void setColor(float r, float g, float b, float a) {
+        super.setColor(r, g, b, a);
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(getColor());
+        pixmap.fill();
+        this.colorTexture = new Texture(pixmap);
+        pixmap.dispose();
     }
 
     private void init() {
@@ -157,13 +181,19 @@ public class ShapeActor extends Actor {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+
         if (mesh != null) {
 
-            if(texture == null){
+            if (texture == null) {
                 colorTexture.bind();
             } else {
                 texture.bind();
             }
+
+            Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_S, GL20.GL_REPEAT);
+            Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_T, GL20.GL_REPEAT);
 
             //render the mesh
             mesh.render(batch.getShader(), GL20.GL_TRIANGLES, 0, mesh.getNumIndices());
@@ -180,6 +210,9 @@ public class ShapeActor extends Actor {
         if (texture != null) {
             texture.dispose();
         }
+        if (colorTexture != null) {
+            colorTexture.dispose();
+        }
     }
 
     public int getType() {
@@ -192,6 +225,15 @@ public class ShapeActor extends Actor {
 
     public void setTexture(Texture texture) {
         this.texture = texture;
+        this.repeatTexture = false;
+    }
+
+    public void setTexture(Texture texture, float width, float height) {
+        this.texture = texture;
+        this.repeatTexture = true;
+        this.textureWidth = width;
+        this.textureHeight = height;
+        updateMesh();
     }
 
     public void setShape(Shape2D shape) {
@@ -213,89 +255,91 @@ public class ShapeActor extends Actor {
 
         if (type == NONE) {
 
-        } else if (type == CIRCLE) {
-            Circle circle = (Circle)this.shape;
-            int divisions = 20;
+        } else {
             MeshBuilder meshBuilder = new MeshBuilder();
             meshBuilder.begin(VERTEX_ATTRIBUTES);
-            meshBuilder.setColor(getColor());
-            MeshPart part1 = meshBuilder.part("part1",GL20.GL_TRIANGLES);
-            EllipseShapeBuilder.build(meshBuilder,circle.radius,divisions,circle.x,circle.y,0,0,0,1);
-            this.mesh = meshBuilder.end();
+            meshBuilder.setColor(Color.WHITE);
 
-        } else if (type == RECTANGLE) {
-            Rectangle rect = ((Rectangle) shape);
+            if (repeatTexture) {
+                //meshBuilder.setUVRange(0, 0, polygon.getBoundingRectangle().getWidth() / textureWidth, polygon.getBoundingRectangle().getHeight() / textureHeight);
+                meshBuilder.setUVRange(0, 0, 1, 1);
+            } else {
+                meshBuilder.setUVRange(1, 1, 0, 0);
+            }
+            if (type == CIRCLE) { ////////////////////////////////// Circle
+                Circle circle = (Circle) this.shape;
+                int divisions = 20;
+                MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
+                if (repeatTexture) {
+                    meshBuilder.setUVRange(circle.radius * 2 / textureWidth, circle.radius * 2 / textureHeight, 0, 0);
+                } else {
+                    meshBuilder.setUVRange(1, 1, 0, 0);
+                }
 
-            MeshBuilder meshBuilder = new MeshBuilder();
-            meshBuilder.begin(VERTEX_ATTRIBUTES);
-            meshBuilder.setColor(getColor());
-            MeshPart part1 = meshBuilder.part("part1",GL20.GL_TRIANGLES);
+                EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, circle.x, circle.y, 0, 0, 0, 1);
 
-            Vector3 bottomLeft = new Vector3(rect.getX(),rect.getY(),0);
-            Vector3 topRight = new Vector3(rect.getX()+rect.getWidth(),rect.getY()+rect.getHeight(),0);
-            Vector3 bottomRight = new Vector3(rect.getX()+rect.getWidth(),rect.getY(),0);
-            Vector3 topleft = new Vector3(rect.getX(),rect.getY()+rect.getHeight(),0);
+            } else if (type == RECTANGLE) {  ////////////////////////////////// Rectangle
+                Rectangle rect = ((Rectangle) this.shape);
+                MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
 
-            Vector3 normal = new Vector3(0,0,1);
-            meshBuilder.rect(bottomLeft,bottomRight,topRight,topleft,normal);
-            this.mesh = meshBuilder.end();
+                Vector3 bottomLeft = new Vector3(rect.getX(), rect.getY(), 0);
+                Vector3 topRight = new Vector3(rect.getX() + rect.getWidth(), rect.getY() + rect.getHeight(), 0);
+                Vector3 bottomRight = new Vector3(rect.getX() + rect.getWidth(), rect.getY(), 0);
+                Vector3 topleft = new Vector3(rect.getX(), rect.getY() + rect.getHeight(), 0);
 
-        } else if (type == POLYGON) {
+                Vector3 normal = new Vector3(0, 0, 1);
 
-            int currentVertex = 0; // increments after every full Vertex
-            int numberOfVertices = 0;
+                if (repeatTexture) {
+                    meshBuilder.setUVRange(0, 0, rect.getWidth() / textureWidth, rect.getHeight() / textureHeight);
+                } else {
+                    meshBuilder.setUVRange(0, 0, 1, 1);
+                }
 
-            float[] x = null;
-            float[] y = null;
-            float bitColor = Color.WHITE.toFloatBits();
-            float[] u = null;
-            float[] v = null;
+                meshBuilder.rect(bottomLeft, bottomRight, topRight, topleft, normal);
 
-            float[] vertices = ((Polygon) shape).getVertices();
-            numberOfVertices = vertices.length / 2;
-            x = new float[numberOfVertices];
-            y = new float[numberOfVertices];
-            u = new float[numberOfVertices];
-            v = new float[numberOfVertices];
+            } else if (type == TRIANGLE) { ////////////////////////////////// Triangle
+                Polygon polygon = (Polygon) this.shape;
 
-            // Origin Vertex For Drawing Triangle_Fan
-            x[currentVertex] = 0;
-            y[currentVertex] = 0;
-            u[currentVertex] = 0;
-            v[currentVertex] = 0;
-            currentVertex++;
+                float[] vertices = polygon.getVertices();
 
-            for (; currentVertex < numberOfVertices; currentVertex++) {
-                x[currentVertex] = vertices[currentVertex*2];
-                y[currentVertex] = vertices[currentVertex*2+1];
-                u[currentVertex] = 0;
-                v[currentVertex] = 0;
+                Vector3 origin = new Vector3(getOriginX(), getOriginY(), 0);
+                MeshPart part = meshBuilder.part("part1", GL20.GL_TRIANGLES);
+                Vector3 p1 = new Vector3(vertices[0] + getOriginX(), vertices[1] + getOriginY(), 0);
+                Vector3 p2 = new Vector3(vertices[2] + getOriginX(), vertices[3] + getOriginY(), 0);
+                Vector3 p3 = new Vector3(vertices[4] + getOriginX(), vertices[5] + getOriginY(), 0);
+                meshBuilder.setUVRange(0, 0, 1, 1);
+                meshBuilder.triangle(p1, p2, p3);
+                meshBuilder.setUVRange(0, 0, 1, 1);
+
+            } else if (type == POLYGON) {  ////////////////////////////////// Polygon
+
+                Polygon polygon = (Polygon) this.shape;
+
+                float[] vertices = polygon.getVertices();
+
+                if (repeatTexture) {
+                    //meshBuilder.setUVRange(0, 0, polygon.getBoundingRectangle().getWidth() / textureWidth, polygon.getBoundingRectangle().getHeight() / textureHeight);
+                    meshBuilder.setUVRange(1, 1, 0, 0);
+                } else {
+                    meshBuilder.setUVRange(1, 1, 0, 0);
+                }
+
+                Vector3 origin = new Vector3(getOriginX(), getOriginY(), 0);
+                for (int i = 0; i < vertices.length; i += 2) {
+                    MeshPart part = meshBuilder.part("part" + i / 2, GL20.GL_TRIANGLES);
+                    Vector3 p1 = new Vector3(vertices[i] + origin.x, vertices[i + 1] + origin.y, 0);
+                    Vector3 p2;
+                    if (i + 2 < vertices.length) {
+                        p2 = new Vector3(vertices[i + 2] + origin.x, vertices[i + 3] + origin.y, 0);
+                    } else {
+                        p2 = new Vector3(vertices[0] + origin.x, vertices[1] + origin.y, 0);
+                    }
+                    meshBuilder.triangle(origin, p1, p2);
+                }
+
             }
 
-
-            float[] meshVertices = new float[numberOfVertices*NUM_COMPONENTS];
-            short[] indices = new short[numberOfVertices];
-
-            int i = 0; // Index of meshVertices Array
-            for (currentVertex = 0; currentVertex<numberOfVertices;currentVertex++) {
-                int meshIndexOfVertex = currentVertex*NUM_COMPONENTS;
-                meshVertices[meshIndexOfVertex] = x[currentVertex];
-                meshVertices[meshIndexOfVertex+1] = y[currentVertex];
-                meshVertices[meshIndexOfVertex+2] = bitColor;
-                meshVertices[meshIndexOfVertex+3] = u[currentVertex];
-                meshVertices[meshIndexOfVertex+4] = v[currentVertex];
-
-                indices[currentVertex] = (short)currentVertex;
-            }
-
-            //Mesh.VertexDataType vertexDataType = (Gdx.gl30 != null) ? Mesh.VertexDataType.VertexBufferObjectWithVAO : Mesh.VertexDataType.VertexArray;
-            this.mesh = new Mesh( false, numberOfVertices, numberOfVertices,
-                    new VertexAttribute(VertexAttributes.Usage.Position, POSITION_COMPONENTS, ShaderProgram.POSITION_ATTRIBUTE),
-                    new VertexAttribute(VertexAttributes.Usage.ColorPacked, COLOR_COMPONENTS, ShaderProgram.COLOR_ATTRIBUTE),
-                    new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, TEXTURE_COMPONENTS, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"));
-            this.mesh.setVertices(meshVertices,0,meshVertices.length);
-            this.mesh.setIndices(indices);
-
+            this.mesh = meshBuilder.end();
         }
     }
 }

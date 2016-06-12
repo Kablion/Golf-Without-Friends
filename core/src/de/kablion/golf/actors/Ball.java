@@ -12,18 +12,12 @@ import com.badlogic.gdx.utils.Array;
 
 public class Ball extends ShapeActor {
 
-    public Ball(float radius, float positionX, float positionY) {
+    public Ball(float x, float y, float radius) {
         super();
-        setPosition(positionX,positionY);
-        setShape(new Circle(positionX,positionY,radius));
-    }
-
-
-   /* public Ball(float radius, Vector3 position){
-        super(new Array<Vector2>().add(new Vector2());
-        setPosition(position.x, position.y);
+        setOrigin(x, y);
         setColor(Color.WHITE);
-    }*/
+        setShape(new Circle(x, y, radius));
+    }
 
     @Override
     public void act(float delta) {

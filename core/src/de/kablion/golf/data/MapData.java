@@ -1,9 +1,11 @@
 package de.kablion.golf.data;
 
 
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
+import de.kablion.golf.Application;
 import de.kablion.golf.actors.Ground;
 import de.kablion.golf.actors.Hole;
 import de.kablion.golf.actors.Wall;
@@ -33,7 +35,7 @@ public class MapData {
         return mapData;
     }
 
-    public static MapData createDebugMap() {
+    public static MapData createDebugMap(Application app) {
         MapData mapData = new MapData();
 
         mapData.par = 2;
@@ -44,21 +46,28 @@ public class MapData {
         mapData.cameraStartingPosition = new Vector3(0,0,0);
 
         mapData.ballRadius = 5;
-        mapData.ballStartingPosition = new Vector3(0,0,0);
+        mapData.ballStartingPosition = new Vector3(0, -25, 0);
 
         // create Walls
         mapData.walls = new Array<Wall>();
         Wall tempWall = new Wall(0,0,50,10,0);
         mapData.walls.add(tempWall);
-        tempWall = new Wall(-52,-20,50,20,0);
+        tempWall = new Wall(0, -50, 50, 10, 0);
         mapData.walls.add(tempWall);
 
         // create Grounds
-        mapData.grounds = null;
+        mapData.grounds = new Array<Ground>();
+        Array<Vector2> polygonPoints = new Array<Vector2>();
+        polygonPoints.add(new Vector2(-70, -100));
+        polygonPoints.add(new Vector2(-70, 100));
+        polygonPoints.add(new Vector2(70, 100));
+        //polygonPoints.add(new Vector2(70,-100));
+        Ground tempGround = new Ground(0, 0, 0, polygonPoints, app.assets);
+        mapData.grounds.add(tempGround);
 
         // create holes
         mapData.holes = new Array<Hole>();
-        Hole tempHole = new Hole(0,50,10);
+        Hole tempHole = new Hole(0, 50, 7);
         mapData.holes.add(tempHole);
 
         return mapData;

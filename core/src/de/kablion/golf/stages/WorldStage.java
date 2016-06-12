@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -53,7 +54,7 @@ public class WorldStage extends Stage {
         mode = PLAY_MODE;
         playerAmount = 1;
         //createFromMapData(MapData.loadMap("Maps/default.json"));
-        createFromMapData(MapData.createDebugMap());
+        createFromMapData(MapData.createDebugMap(app));
     }
 
     public void createFromMapData(MapData mapData) {
@@ -86,18 +87,22 @@ public class WorldStage extends Stage {
         walls = mapData.getWalls();
         if(walls != null){
             for (int i=0; i<walls.size;i++){
-                walls.get(i).setTexture(app.assets.get("badlogic.jpg",Texture.class));
                 root.addActor(walls.get(i));
             }
         }
         holes = mapData.getHoles();
         if(holes != null){
-            for (int i=0; i<holes.size;i++) root.addActor(holes.get(i));
+            for (int i = 0; i < holes.size; i++) {
+                root.addActor(holes.get(i));
+            }
         }
 
-        balls = null;
+        balls = new Array<Ball>();
+        Vector3 startingPosition = mapData.getBallStartingPosition();
         for (int i=0; i<playerAmount;i++){
-            //balls.add(new Ball(mapData.getBallRadius(), mapData.getBallStartingPosition()));
+            Ball tempBall = new Ball(startingPosition.x, startingPosition.y, mapData.getBallRadius());
+            balls.add(tempBall);
+            root.addActor(tempBall);
         }
 
     }
@@ -106,19 +111,19 @@ public class WorldStage extends Stage {
     public void act() {
         super.act();
 
-        if(Gdx.input.isKeyPressed(Input.Keys.RIGHT)){
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
             getCamera().position.sub(1,0,0);
         }
 
-        if(Gdx.input.isKeyPressed(Input.Keys.LEFT)){
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
             getCamera().position.add(1,0,0);
         }
 
-        if(Gdx.input.isKeyPressed(Input.Keys.UP)){
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
             getCamera().position.sub(0,1,0);
         }
 
-        if(Gdx.input.isKeyPressed(Input.Keys.DOWN)){
+        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
             getCamera().position.add(0,1,0);
         }
     }
