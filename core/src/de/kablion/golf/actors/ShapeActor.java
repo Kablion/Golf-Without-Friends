@@ -11,9 +11,11 @@ import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
+import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo;
 import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.EllipseShapeBuilder;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Circle;
+import com.badlogic.gdx.math.GeometryUtils;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Shape2D;
@@ -243,10 +245,57 @@ public class ShapeActor extends Actor {
         if (mesh != null) {
             //setSize(mesh.calculateBoundingBox().getWidth(),mesh.calculateBoundingBox().getHeight());
             BoundingBox boundingBox = mesh.calculateBoundingBox();
-            float left = getOriginX() - boundingBox.getWidth() / 2;
-            float bottom = getOriginY() - boundingBox.getHeight() / 2;
-            setBounds(left, bottom, boundingBox.getWidth(), boundingBox.getHeight());
+            Vector3 bottomLeft = new Vector3();
+            boundingBox.getCorner000(bottomLeft);
+            setBounds(bottomLeft.x, bottomLeft.y, boundingBox.getWidth(), boundingBox.getHeight());
         }
+    }
+
+    private float[] getUVRange(Rectangle boundingRect) {
+        float minU, minV, maxU, maxV;
+        minU = 0;
+        minV = 0;
+        if (repeatTexture) {
+            maxU = boundingRect.getWidth() / textureWidth;
+            maxV = boundingRect.getHeight() / textureHeight;
+        } else {
+            maxU = 1;
+            maxV = 1;
+        }
+        return new float[]{minU, minV, maxU, maxV};
+    }
+
+    private float[] getUVVertices(float[] xyVertices, Rectangle boundingRect) {
+        float[] uv = new float[xyVertices.length];
+        int MINU = 0, MINV = 1, MAXU = 2, MAXV = 3;
+
+        float[] uvRange = getUVRange(boundingRect);
+
+
+        float uRangeWidth = uvRange[MAXU] - uvRange[MINU];
+        float vRangeWidth = uvRange[MAXV] - uvRange[MINV];
+
+        for (int i = 0; i < xyVertices.length; i += 2) {
+            // U
+            float inPercent = (boundingRect.x - xyVertices[i]) / boundingRect.getWidth();
+            uv[i] = uRangeWidth * inPercent + uvRange[MINU];
+
+            // V
+            inPercent = (boundingRect.y - xyVertices[i + 1]) / boundingRect.getHeight();
+            uv[i + 1] = vRangeWidth * inPercent + uvRange[MINV];
+        }
+
+        return uv;
+    }
+
+    private static float[] getUnprojectedVertices(float[] projVertices, Vector3 origin) {
+        float[] unprojVertices = new float[projVertices.length];
+
+        for (int i = 0; i < projVertices.length; i += 2) {
+            unprojVertices[i] = projVertices[i] + origin.x;
+            unprojVertices[i + 1] = projVertices[i + 1] + origin.y;
+        }
+        return unprojVertices;
     }
 
     private void updateMesh() {
@@ -260,81 +309,71 @@ public class ShapeActor extends Actor {
             meshBuilder.begin(VERTEX_ATTRIBUTES);
             meshBuilder.setColor(Color.WHITE);
 
-            if (repeatTexture) {
-                //meshBuilder.setUVRange(0, 0, polygon.getBoundingRectangle().getWidth() / textureWidth, polygon.getBoundingRectangle().getHeight() / textureHeight);
-                meshBuilder.setUVRange(0, 0, 1, 1);
-            } else {
-                meshBuilder.setUVRange(1, 1, 0, 0);
-            }
             if (type == CIRCLE) { ////////////////////////////////// Circle
                 Circle circle = (Circle) this.shape;
                 int divisions = 20;
+                if (circle.radius > 50) divisions = 50;
                 MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
-                if (repeatTexture) {
-                    meshBuilder.setUVRange(circle.radius * 2 / textureWidth, circle.radius * 2 / textureHeight, 0, 0);
-                } else {
-                    meshBuilder.setUVRange(1, 1, 0, 0);
-                }
+
+                float[] uvRange = getUVRange(new Rectangle(circle.x - circle.radius,
+                        circle.y - circle.radius,
+                        circle.radius * 2,
+                        circle.radius * 2));
+                meshBuilder.setUVRange(uvRange[2], uvRange[3], uvRange[0], uvRange[1]);
 
                 EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, circle.x, circle.y, 0, 0, 0, 1);
 
             } else if (type == RECTANGLE) {  ////////////////////////////////// Rectangle
                 Rectangle rect = ((Rectangle) this.shape);
-                MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
 
+
+                MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
                 Vector3 bottomLeft = new Vector3(rect.getX(), rect.getY(), 0);
                 Vector3 topRight = new Vector3(rect.getX() + rect.getWidth(), rect.getY() + rect.getHeight(), 0);
                 Vector3 bottomRight = new Vector3(rect.getX() + rect.getWidth(), rect.getY(), 0);
                 Vector3 topleft = new Vector3(rect.getX(), rect.getY() + rect.getHeight(), 0);
-
                 Vector3 normal = new Vector3(0, 0, 1);
 
-                if (repeatTexture) {
-                    meshBuilder.setUVRange(0, 0, rect.getWidth() / textureWidth, rect.getHeight() / textureHeight);
-                } else {
-                    meshBuilder.setUVRange(0, 0, 1, 1);
-                }
+                float[] uvRange = getUVRange(rect);
+                meshBuilder.setUVRange(uvRange[0], uvRange[1], uvRange[2], uvRange[3]);
 
                 meshBuilder.rect(bottomLeft, bottomRight, topRight, topleft, normal);
 
-            } else if (type == TRIANGLE) { ////////////////////////////////// Triangle
-                Polygon polygon = (Polygon) this.shape;
-
-                float[] vertices = polygon.getVertices();
-
-                Vector3 origin = new Vector3(getOriginX(), getOriginY(), 0);
-                MeshPart part = meshBuilder.part("part1", GL20.GL_TRIANGLES);
-                Vector3 p1 = new Vector3(vertices[0] + getOriginX(), vertices[1] + getOriginY(), 0);
-                Vector3 p2 = new Vector3(vertices[2] + getOriginX(), vertices[3] + getOriginY(), 0);
-                Vector3 p3 = new Vector3(vertices[4] + getOriginX(), vertices[5] + getOriginY(), 0);
-                meshBuilder.setUVRange(0, 0, 1, 1);
-                meshBuilder.triangle(p1, p2, p3);
-                meshBuilder.setUVRange(0, 0, 1, 1);
-
-            } else if (type == POLYGON) {  ////////////////////////////////// Polygon
+            } else if (type == TRIANGLE | type == POLYGON) {  ////////////////////////////////// Polygon
 
                 Polygon polygon = (Polygon) this.shape;
 
-                float[] vertices = polygon.getVertices();
+                Vector3 originP = new Vector3(getOriginX(), getOriginY(), 0);
+                float[] vertices = getUnprojectedVertices(polygon.getVertices(), originP);
+                float[] uv = getUVVertices(vertices, polygon.getBoundingRectangle());
 
-                if (repeatTexture) {
-                    //meshBuilder.setUVRange(0, 0, polygon.getBoundingRectangle().getWidth() / textureWidth, polygon.getBoundingRectangle().getHeight() / textureHeight);
-                    meshBuilder.setUVRange(1, 1, 0, 0);
-                } else {
-                    meshBuilder.setUVRange(1, 1, 0, 0);
-                }
 
-                Vector3 origin = new Vector3(getOriginX(), getOriginY(), 0);
+                Vector2 centerP = new Vector2();
+                centerP = GeometryUtils.polygonCentroid(vertices, 0, vertices.length, centerP);
+                //getCentroid(vertices);
+                float[] centerUV = getUVVertices(new float[]{centerP.x, centerP.y}, polygon.getBoundingRectangle());
+                VertexInfo centerV = new VertexInfo();
+                centerV.setPos(new Vector3(centerP, 0));
+                centerV.setUV(centerUV[0], centerUV[1]);
+
                 for (int i = 0; i < vertices.length; i += 2) {
                     MeshPart part = meshBuilder.part("part" + i / 2, GL20.GL_TRIANGLES);
-                    Vector3 p1 = new Vector3(vertices[i] + origin.x, vertices[i + 1] + origin.y, 0);
+                    Vector3 p1 = new Vector3(vertices[i], vertices[i + 1], 0);
+                    VertexInfo v1 = new VertexInfo();
+                    v1.setPos(p1);
+                    v1.setUV(uv[i], uv[i + 1]);
                     Vector3 p2;
+                    VertexInfo v2 = new VertexInfo();
                     if (i + 2 < vertices.length) {
-                        p2 = new Vector3(vertices[i + 2] + origin.x, vertices[i + 3] + origin.y, 0);
+                        p2 = new Vector3(vertices[i + 2], vertices[i + 3], 0);
+                        v2.setUV(uv[i + 2], uv[i + 3]);
                     } else {
-                        p2 = new Vector3(vertices[0] + origin.x, vertices[1] + origin.y, 0);
+                        p2 = new Vector3(vertices[0], vertices[1], 0);
+                        v2.setUV(uv[0], uv[1]);
                     }
-                    meshBuilder.triangle(origin, p1, p2);
+                    v2.setPos(p2);
+                    meshBuilder.triangle(centerV, v1, v2);
+                    //meshBuilder.triangle(origin, p1, p2);
                 }
 
             }

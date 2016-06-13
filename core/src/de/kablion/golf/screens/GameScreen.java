@@ -40,7 +40,7 @@ public class GameScreen implements Screen {
         Gdx.input.setInputProcessor(multiplexer);
 
         worldStage.reset();
-        //worldStage.setDebugAll(true);
+        worldStage.setDebugAll(true);
         hudStage.reset();
         //hudStage.setDebugAll(true);
     }

@@ -59,8 +59,8 @@ public class MapData {
         mapData.grounds = new Array<Ground>();
         Array<Vector2> polygonPoints = new Array<Vector2>();
         polygonPoints.add(new Vector2(-70, -100));
-        polygonPoints.add(new Vector2(-70, 100));
-        polygonPoints.add(new Vector2(70, 100));
+        //polygonPoints.add(new Vector2(-70, 100));
+        //polygonPoints.add(new Vector2(70, 100));
         //polygonPoints.add(new Vector2(70,-100));
         Ground tempGround = new Ground(0, 0, 0, polygonPoints, app.assets);
         mapData.grounds.add(tempGround);
