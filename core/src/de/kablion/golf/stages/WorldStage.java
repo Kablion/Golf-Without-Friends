@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.input.GestureDetector;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -110,22 +111,6 @@ public class WorldStage extends Stage {
     @Override
     public void act() {
         super.act();
-
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            getCamera().position.sub(1,0,0);
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            getCamera().position.add(1,0,0);
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
-            getCamera().position.sub(0,1,0);
-        }
-
-        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
-            getCamera().position.add(0,1,0);
-        }
     }
 
     @Override
@@ -149,5 +134,21 @@ public class WorldStage extends Stage {
         if(holes != null) {
             holes.clear();
         }
+    }
+
+    public int getMode() {
+        return mode;
+    }
+
+    public void setMode(int mode) {
+        if (mode == CAMERA_MODE | mode == PLAY_MODE) {
+            this.mode = mode;
+        } else {
+            throw new IllegalArgumentException("Mode is not defined: " + mode);
+        }
+    }
+
+    public Ball getBall() {
+        return balls.get(0);
     }
 }

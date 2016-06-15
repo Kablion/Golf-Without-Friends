@@ -43,7 +43,7 @@ public class MapData {
 
         mapData.cmPerDisplayWidth = 150;
 
-        mapData.cameraStartingPosition = new Vector3(0,0,0);
+        mapData.cameraStartingPosition = new Vector3(0, 0, 100);
 
         mapData.ballRadius = 5;
         mapData.ballStartingPosition = new Vector3(0, -25, 0);
@@ -52,7 +52,7 @@ public class MapData {
         mapData.walls = new Array<Wall>();
         Wall tempWall = new Wall(0,0,50,10,0);
         mapData.walls.add(tempWall);
-        tempWall = new Wall(0, -50, 50, 10, 0);
+        tempWall = new Wall(0, -50, 50, 10, 20);
         mapData.walls.add(tempWall);
 
         // create Grounds
@@ -60,7 +60,7 @@ public class MapData {
         Array<Vector2> polygonPoints = new Array<Vector2>();
         polygonPoints.add(new Vector2(-70, -100));
         //polygonPoints.add(new Vector2(-70, 100));
-        //polygonPoints.add(new Vector2(70, 100));
+        polygonPoints.add(new Vector2(70, 100));
         //polygonPoints.add(new Vector2(70,-100));
         Ground tempGround = new Ground(0, 0, 0, polygonPoints, app.assets);
         mapData.grounds.add(tempGround);

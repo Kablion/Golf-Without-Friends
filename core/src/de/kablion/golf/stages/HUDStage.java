@@ -4,6 +4,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -31,13 +34,13 @@ import static de.kablion.golf.utils.Constants.*;
 public class HUDStage extends Stage {
 
     private Application app;
+    private WorldStage worldStage;
     private Skin hudSkin;
     private Skin skin;
 
     private Table rootTable;
     private Table shootBar;
     private Table buttons;
-
 
     private Image cameraOverlay;
     private Label strokeLabel;
@@ -46,11 +49,15 @@ public class HUDStage extends Stage {
     private ImageButton backButton;
     private Slider powerBar;
 
-    public HUDStage(Application application) {
+    private Vector3 shootVelocity;
+
+    public HUDStage(Application application, WorldStage stage) {
         super(new ExtendViewport(UI_WIDTH,UI_HEIGHT),application.batch);
-        app = application;
-        hudSkin = new Skin();
+        this.app = application;
+        this.worldStage = stage;
+        this.hudSkin = new Skin();
         this.skin = new Skin();
+        this.shootVelocity = new Vector3();
 
 
     }
@@ -73,6 +80,7 @@ public class HUDStage extends Stage {
     }
 
     private void initRoot() {
+        clear();
         rootTable = new Table();
         rootTable.setFillParent(true);
         addActor(rootTable);
@@ -82,6 +90,15 @@ public class HUDStage extends Stage {
         shootBar = new Table();
         powerBar = new Slider(0,1,0.01f,false,skin);
         shootButton = new ImageButton(hudSkin, "shoot-button");
+        shootButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                super.clicked(event, x, y);
+                if (!worldStage.getBall().isMoving()) {
+                    worldStage.getBall().shoot(shootVelocity);
+                }
+            }
+        });
         shootBar.add(powerBar).left().expandX().fill().padLeft(10).padRight(10);
         shootBar.add(shootButton).right().height(SHOOTBAR_HEIGHT).width(SHOOTBAR_HEIGHT);
         //shootBar.setHeight(UI_HEIGHT/12);
@@ -119,9 +136,11 @@ public class HUDStage extends Stage {
                 if(!cameraButton.isChecked()){
                     cameraButton.setChecked(false);
                     cameraOverlay.setVisible(false);
+                    worldStage.setMode(WorldStage.PLAY_MODE);
                 } else {
                     cameraButton.setChecked(true);
                     cameraOverlay.setVisible(true);
+                    worldStage.setMode(WorldStage.CAMERA_MODE);
                 }
             }
         });
@@ -145,9 +164,51 @@ public class HUDStage extends Stage {
     }
 
     @Override
+    public void draw() {
+        super.draw();
+        if (!worldStage.getBall().isMoving()) {
+            app.shapeRenderer.setColor(Color.GRAY);
+            app.shapeRenderer.setProjectionMatrix(worldStage.getCamera().combined);
+            app.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            app.shapeRenderer.rectLine(worldStage.getBall().getOriginX(),
+                    worldStage.getBall().getOriginY(),
+                    worldStage.getBall().getOriginX() + shootVelocity.x,
+                    worldStage.getBall().getOriginY() + shootVelocity.y,
+                    1.5f);
+            app.shapeRenderer.end();
+        }
+    }
+
+    @Override
     public void dispose() {
         super.dispose();
         skin.dispose();
         hudSkin.dispose();
+    }
+
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        boolean handled = super.touchDown(screenX, screenY, pointer, button);
+        if (worldStage.getMode() == WorldStage.PLAY_MODE) {
+            if (!handled & pointer == 0) {
+                shootVelocity = worldStage.getCamera().unproject(new Vector3(screenX, screenY, 0));
+                shootVelocity.sub(worldStage.getBall().getOriginX(), worldStage.getBall().getOriginY(), 0);
+                handled = true;
+            }
+        }
+        return handled;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        boolean handled = super.touchDragged(screenX, screenY, pointer);
+        if (worldStage.getMode() == WorldStage.PLAY_MODE) {
+            if (!handled & pointer == 0) {
+                shootVelocity = worldStage.getCamera().unproject(new Vector3(screenX, screenY, 0));
+                shootVelocity.sub(worldStage.getBall().getOriginX(), worldStage.getBall().getOriginY(), 0);
+                handled = true;
+            }
+        }
+        return handled;
     }
 }

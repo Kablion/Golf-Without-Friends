@@ -14,8 +14,10 @@ import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo;
 import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.EllipseShapeBuilder;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.GeometryUtils;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Shape2D;
@@ -37,7 +39,7 @@ public class ShapeActor extends Actor {
     public static final int TEXTURE_COMPONENTS = 2;
 
     //Total number of components for all attributes
-    public static final int NUM_COMPONENTS = POSITION_COMPONENTS + COLOR_COMPONENTS + TEXTURE_COMPONENTS;
+    public static final int NUM_COMPONENTS = POSITION_COMPONENTS + 1 + TEXTURE_COMPONENTS;
 
     public static final VertexAttributes VERTEX_ATTRIBUTES = new VertexAttributes(new VertexAttribute(VertexAttributes.Usage.Position, POSITION_COMPONENTS, ShaderProgram.POSITION_ATTRIBUTE),
             new VertexAttribute(VertexAttributes.Usage.ColorPacked, COLOR_COMPONENTS, ShaderProgram.COLOR_ATTRIBUTE),
@@ -60,6 +62,8 @@ public class ShapeActor extends Actor {
     private float textureHeight;
 
     private Texture colorTexture;
+
+    private Matrix4 transform = new Matrix4();
 
     public ShapeActor(Shape2D shape, float positionX, float positionY) {
         super();
@@ -186,7 +190,7 @@ public class ShapeActor extends Actor {
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
 
-        if (mesh != null) {
+        if (mesh != null & isVisible()) {
 
             if (texture == null) {
                 colorTexture.bind();
@@ -201,6 +205,15 @@ public class ShapeActor extends Actor {
             mesh.render(batch.getShader(), GL20.GL_TRIANGLES, 0, mesh.getNumIndices());
 
         }
+    }
+
+    @Override
+    protected void drawDebugBounds(ShapeRenderer shapes) {
+
+        if (!getDebug()) return;
+        shapes.set(ShapeRenderer.ShapeType.Line);
+        shapes.setColor(getStage().getDebugColor());
+        shapes.rect(getX(), getY(), getOriginX(), getOriginY(), getWidth(), getHeight(), getScaleX(), getScaleY(), 0);
     }
 
     @Override
@@ -245,20 +258,50 @@ public class ShapeActor extends Actor {
         if (mesh != null) {
             //setSize(mesh.calculateBoundingBox().getWidth(),mesh.calculateBoundingBox().getHeight());
             BoundingBox boundingBox = mesh.calculateBoundingBox();
-            Vector3 bottomLeft = new Vector3();
-            boundingBox.getCorner000(bottomLeft);
-            setBounds(bottomLeft.x, bottomLeft.y, boundingBox.getWidth(), boundingBox.getHeight());
+            Rectangle boundingRect = calculateMeshBounds(this.mesh);
+            setBounds(boundingRect.x, boundingRect.y, boundingRect.getWidth(), boundingRect.getHeight());
         }
+    }
+
+    private static Rectangle calculateMeshBounds(Mesh mesh) {
+        Rectangle rect = new Rectangle();
+        float[] vertices = new float[mesh.getNumVertices() * NUM_COMPONENTS];
+        mesh.getVertices(vertices);
+        float minX = vertices[0];
+        float minY = vertices[1];
+        float maxX = vertices[0];
+        float maxY = vertices[1];
+
+        for (int i = 5; i < vertices.length; i += NUM_COMPONENTS) {
+            float x = vertices[i];
+            float y = vertices[i + 1];
+            if (x < minX) {
+                minX = x;
+            }
+            if (x > maxX) {
+                maxX = x;
+            }
+            if (y < minY) {
+                minY = y;
+            }
+            if (y > maxY) {
+                maxY = y;
+            }
+        }
+        rect.set(minX, minY, maxX - minX, maxY - minY);
+        return rect;
     }
 
     private float[] getUVRange(Rectangle boundingRect) {
         float minU, minV, maxU, maxV;
-        minU = 0;
-        minV = 0;
         if (repeatTexture) {
-            maxU = boundingRect.getWidth() / textureWidth;
-            maxV = boundingRect.getHeight() / textureHeight;
+            minU = boundingRect.getWidth() - (boundingRect.getWidth() / textureWidth) / 2;
+            minV = boundingRect.getHeight() - (boundingRect.getHeight() / textureHeight) / 2;
+            maxU = boundingRect.getWidth() + (boundingRect.getWidth() / textureWidth) / 2;
+            maxV = boundingRect.getHeight() + (boundingRect.getHeight() / textureHeight) / 2;
         } else {
+            minU = 0;
+            minV = 0;
             maxU = 1;
             maxV = 1;
         }
@@ -321,17 +364,21 @@ public class ShapeActor extends Actor {
                         circle.radius * 2));
                 meshBuilder.setUVRange(uvRange[2], uvRange[3], uvRange[0], uvRange[1]);
 
-                EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, circle.x, circle.y, 0, 0, 0, 1);
+                //EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, circle.x, circle.y, 0, 0, 0, 1);
+                EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, 0, 0, 0, 0, 0, 1);
 
             } else if (type == RECTANGLE) {  ////////////////////////////////// Rectangle
                 Rectangle rect = ((Rectangle) this.shape);
 
-
                 MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
-                Vector3 bottomLeft = new Vector3(rect.getX(), rect.getY(), 0);
+                /*Vector3 bottomLeft = new Vector3(rect.getX(), rect.getY(), 0);
                 Vector3 topRight = new Vector3(rect.getX() + rect.getWidth(), rect.getY() + rect.getHeight(), 0);
                 Vector3 bottomRight = new Vector3(rect.getX() + rect.getWidth(), rect.getY(), 0);
-                Vector3 topleft = new Vector3(rect.getX(), rect.getY() + rect.getHeight(), 0);
+                Vector3 topleft = new Vector3(rect.getX(), rect.getY() + rect.getHeight(), 0);*/
+                Vector3 bottomLeft = new Vector3(-rect.getWidth() / 2, -rect.getHeight() / 2, 0);
+                Vector3 topRight = new Vector3(rect.getWidth() / 2, rect.getHeight() / 2, 0);
+                Vector3 bottomRight = new Vector3(rect.getWidth() / 2, -rect.getHeight() / 2, 0);
+                Vector3 topleft = new Vector3(-rect.getWidth() / 2, rect.getHeight() / 2, 0);
                 Vector3 normal = new Vector3(0, 0, 1);
 
                 float[] uvRange = getUVRange(rect);
@@ -344,7 +391,7 @@ public class ShapeActor extends Actor {
                 Polygon polygon = (Polygon) this.shape;
 
                 Vector3 originP = new Vector3(getOriginX(), getOriginY(), 0);
-                float[] vertices = getUnprojectedVertices(polygon.getVertices(), originP);
+                float[] vertices = polygon.getVertices();
                 float[] uv = getUVVertices(vertices, polygon.getBoundingRectangle());
 
 
@@ -379,6 +426,107 @@ public class ShapeActor extends Actor {
             }
 
             this.mesh = meshBuilder.end();
+
+            // transforming the mesh
+            this.transform.idt();
+            if (getRotation() != 0) {
+                // rotating
+                this.transform = new Matrix4();
+                this.transform.rotate(0, 0, 1, getRotation());
+                this.mesh.transform(transform);
+            }
+            // translate from 0,0 to to Origin
+            this.transform = new Matrix4();
+            this.transform.translate(getOriginX(), getOriginY(), 0);
+            this.mesh.transform(transform);
+
+        }
+    }
+
+    @Override
+    public void setX(float x) {
+        setOriginX(x);
+    }
+
+    @Override
+    public void setY(float y) {
+        setOriginY(y);
+    }
+
+    @Override
+    public void setPosition(float x, float y) {
+        super.setOrigin(x, y);
+    }
+
+    @Override
+    public void setPosition(float x, float y, int alignment) {
+        setOrigin(alignment);
+        setOrigin(x, y);
+    }
+
+    @Override
+    public void setOriginX(float originX) {
+        float oldX = getOriginX();
+        super.setOriginX(originX);
+        if (mesh != null) {
+            this.transform = new Matrix4();
+            this.transform.translate(-oldX, 0, 0);
+            this.mesh.transform(this.transform);
+            this.transform = new Matrix4();
+            this.transform.translate(getOriginX(), 0, 0);
+            this.mesh.transform(this.transform);
+        }
+    }
+
+    @Override
+    public void setOriginY(float originY) {
+        float oldY = getOriginY();
+        super.setOriginY(originY);
+        if (mesh != null) {
+            this.transform = new Matrix4();
+            this.transform.translate(0, -oldY, 0);
+            this.mesh.transform(this.transform);
+            this.transform = new Matrix4();
+            this.transform.translate(0, getOriginY(), 0);
+            this.mesh.transform(this.transform);
+        }
+    }
+
+    @Override
+    public void setOrigin(float originX, float originY) {
+        float oldX = getOriginX();
+        float oldY = getOriginY();
+        super.setOrigin(originX, originY);
+        if (mesh != null) {
+            this.transform = new Matrix4();
+            this.transform.translate(-oldX, -oldY, 0);
+            this.mesh.transform(this.transform);
+            this.transform = new Matrix4();
+            this.transform.translate(getOriginX(), getOriginY(), 0);
+        }
+    }
+
+    @Override
+    public void setRotation(float degrees) {
+        float oldDegrees = getRotation();
+        super.setRotation(degrees);
+        if (mesh != null) {
+            //translate to 0,0
+            this.transform = new Matrix4();
+            this.transform.translate(-getOriginX(), -getOriginY(), 0);
+            this.mesh.transform(this.transform);
+            // rotate to 0 Rotation
+            this.transform = new Matrix4();
+            this.transform.rotate(0, 0, 1, -oldDegrees);
+            this.mesh.transform(this.transform);
+            // rotate with new Rotation
+            this.transform = new Matrix4();
+            this.transform.rotate(0, 0, 1, degrees);
+            this.mesh.transform(this.transform);
+            // translate back to Origin
+            this.transform = new Matrix4();
+            this.transform.translate(-getOriginX(), -getOriginY(), 0);
+            this.mesh.transform(this.transform);
         }
     }
 }

@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeType;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.FillViewport;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -25,6 +26,7 @@ public class Application extends Game {
 	public SpriteBatch batch;
 	public OrthographicCamera cameraUI;
 	public AssetManager assets;
+	public ShapeRenderer shapeRenderer;
 
 	public BitmapFont font24;
 
@@ -42,6 +44,8 @@ public class Application extends Game {
 		cameraUI.setToOrtho(false, UI_WIDTH,UI_HEIGHT);
 
 		initFonts();
+
+		shapeRenderer = new ShapeRenderer();
 
 		loadingScreen = new LoadingScreen(this);
 		mainMenuScreen = new MainMenuScreen(this);

@@ -12,15 +12,65 @@ import com.badlogic.gdx.utils.Array;
 
 public class Ball extends ShapeActor {
 
+    private Vector3 velocity;
+    private Vector3 positionBeforeShot;
+
     public Ball(float x, float y, float radius) {
         super();
         setOrigin(x, y);
         setColor(Color.WHITE);
         setShape(new Circle(x, y, radius));
+        velocity = new Vector3();
     }
 
     @Override
     public void act(float delta) {
         super.act(delta);
+        move(delta);
+        slowOverTime(delta);
+    }
+
+    public void move(float delta) {
+
+        if (delta > 1) {
+            return;
+        }
+
+
+        if (velocity.x != 0) {
+            setOriginX(getOriginX() + velocity.x * delta);
+        }
+
+        if (velocity.y != 0) {
+            setOriginY(getOriginY() + velocity.y * delta);
+        }
+    }
+
+    public void slowOverTime(float delta) {
+        addToSpeed(-0.5f * (getSpeed() + 10) * delta);
+        if (getSpeed() < 2.5f) {
+            velocity.set(0, 0, 0);
+        }
+    }
+
+    public void shoot(Vector3 shootVelocity) {
+        velocity.x = shootVelocity.x * 2;
+        velocity.y = shootVelocity.y * 2;
+    }
+
+    public void addToSpeed(float number) {
+        if (getSpeed() + number > 0) {
+            velocity.setLength(getSpeed() + number);
+        } else {
+            velocity.setLength(0);
+        }
+    }
+
+    public float getSpeed() {
+        return velocity.len();
+    }
+
+    public boolean isMoving() {
+        return velocity.len() != 0;
     }
 }

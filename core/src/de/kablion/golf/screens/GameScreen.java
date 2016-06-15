@@ -6,6 +6,8 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
+import com.badlogic.gdx.input.GestureDetector;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
@@ -13,6 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 
 import de.kablion.golf.Application;
+import de.kablion.golf.inputhandler.CameraHandler;
 import de.kablion.golf.stages.HUDStage;
 import de.kablion.golf.stages.WorldStage;
 
@@ -22,13 +25,18 @@ public class GameScreen implements Screen {
 
     private final Application app;
     private InputMultiplexer multiplexer;
-    private HUDStage hudStage;
     private WorldStage worldStage;
+    private HUDStage hudStage;
+
+    private GestureDetector cameraDetector;
+    private CameraHandler cameraHandler;
 
     public GameScreen(final Application app) {
         this.app = app;
-        this.hudStage = new HUDStage(app);
         this.worldStage = new WorldStage(app);
+        this.hudStage = new HUDStage(app, worldStage);
+        this.cameraHandler = new CameraHandler(worldStage);
+        this.cameraDetector = new GestureDetector(cameraHandler);
         this.multiplexer = new InputMultiplexer();
     }
 
@@ -37,10 +45,12 @@ public class GameScreen implements Screen {
         System.out.println("GAME");
         multiplexer.addProcessor(hudStage);
         multiplexer.addProcessor(worldStage);
+        multiplexer.addProcessor(cameraDetector);
+        multiplexer.addProcessor(cameraHandler);
         Gdx.input.setInputProcessor(multiplexer);
 
         worldStage.reset();
-        worldStage.setDebugAll(true);
+        //worldStage.setDebugAll(true);
         hudStage.reset();
         //hudStage.setDebugAll(true);
     }
@@ -48,6 +58,7 @@ public class GameScreen implements Screen {
     public void update(float delta){
         hudStage.act();
         worldStage.act();
+        cameraHandler.update(delta);
     }
 
     @Override
