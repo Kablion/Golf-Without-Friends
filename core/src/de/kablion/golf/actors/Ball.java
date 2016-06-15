@@ -23,9 +23,7 @@ public class Ball extends ShapeActor {
         velocity = new Vector3();
     }
 
-    @Override
-    public void act(float delta) {
-        super.act(delta);
+    public void update(float delta) {
         move(delta);
         slowOverTime(delta);
     }

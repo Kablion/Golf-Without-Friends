@@ -5,26 +5,19 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.input.GestureDetector;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
-import com.badlogic.gdx.scenes.scene2d.ui.Slider;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.viewport.ExtendViewport;
 
 import de.kablion.golf.Application;
+import de.kablion.golf.actors.World;
 import de.kablion.golf.inputhandler.CameraHandler;
 import de.kablion.golf.stages.HUDStage;
 import de.kablion.golf.stages.WorldStage;
-
-import static de.kablion.golf.utils.Constants.*;
 
 public class GameScreen implements Screen {
 
     private final Application app;
     private InputMultiplexer multiplexer;
+    private World world;
     private WorldStage worldStage;
     private HUDStage hudStage;
 
@@ -33,7 +26,8 @@ public class GameScreen implements Screen {
 
     public GameScreen(final Application app) {
         this.app = app;
-        this.worldStage = new WorldStage(app);
+        this.world = new World(app, 1);
+        this.worldStage = new WorldStage(app, world, 1);
         this.hudStage = new HUDStage(app, worldStage);
         this.cameraHandler = new CameraHandler(worldStage);
         this.cameraDetector = new GestureDetector(cameraHandler);
@@ -49,6 +43,7 @@ public class GameScreen implements Screen {
         multiplexer.addProcessor(cameraHandler);
         Gdx.input.setInputProcessor(multiplexer);
 
+        world.reset();
         worldStage.reset();
         //worldStage.setDebugAll(true);
         hudStage.reset();
@@ -56,6 +51,7 @@ public class GameScreen implements Screen {
     }
 
     public void update(float delta){
+        world.update(delta);
         hudStage.act();
         worldStage.act();
         cameraHandler.update(delta);

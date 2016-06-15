@@ -9,24 +9,36 @@ import de.kablion.golf.Application;
 import de.kablion.golf.actors.Ground;
 import de.kablion.golf.actors.Hole;
 import de.kablion.golf.actors.Wall;
+import de.kablion.golf.data.actors.BallData;
+import de.kablion.golf.data.actors.CameraData;
+import de.kablion.golf.data.actors.GroundData;
+import de.kablion.golf.data.actors.HoleData;
+import de.kablion.golf.data.actors.WallData;
 
 public class MapData {
 
-    private int par;
-    private float maxShootSpeed;
+    public static final int DEFAULT_PAR = 2;
+    public static final float DEFAULT_MAX_SHOOT_SPEED = 2;
 
-    private Vector3 cameraStartingPosition;
-    private float cmPerDisplayWidth;
+    public int par;
+    public float maxShootSpeed;
 
-    private Vector3 ballStartingPosition;
-    private float ballRadius;
+    public BallData ballData;
+    public CameraData cameraData;
 
-    private Array<Wall> walls;
-    private Array<Ground> grounds;
-    private Array<Hole> holes;
+    public Array<WallData> wallDatas;
+    public Array<GroundData> groundDatas;
+    public Array<HoleData> holeDatas;
 
     public MapData(){
+        par = DEFAULT_PAR;
+        maxShootSpeed = DEFAULT_MAX_SHOOT_SPEED;
 
+        ballData = new BallData();
+        cameraData = new CameraData();
+        wallDatas = new Array<WallData>();
+        groundDatas = new Array<GroundData>();
+        holeDatas = new Array<HoleData>();
     }
 
     public static MapData loadMap(String path) {
@@ -35,77 +47,49 @@ public class MapData {
         return mapData;
     }
 
-    public static MapData createDebugMap(Application app) {
+    public static MapData createDebugMap() {
         MapData mapData = new MapData();
 
         mapData.par = 2;
         mapData.maxShootSpeed = 5;
 
-        mapData.cmPerDisplayWidth = 150;
+        mapData.cameraData.cmPerDisplayWidth = 150;
+        mapData.cameraData.startingPosition = new Vector3(0, 0, 100);
 
-        mapData.cameraStartingPosition = new Vector3(0, 0, 100);
-
-        mapData.ballRadius = 5;
-        mapData.ballStartingPosition = new Vector3(0, -25, 0);
+        mapData.ballData.radius = 5;
+        mapData.ballData.startingPosition = new Vector3(0, -25, 0);
 
         // create Walls
-        mapData.walls = new Array<Wall>();
-        Wall tempWall = new Wall(0,0,50,10,0);
-        mapData.walls.add(tempWall);
-        tempWall = new Wall(0, -50, 50, 10, 20);
-        mapData.walls.add(tempWall);
+        WallData tempWallData = new WallData();
+        tempWallData.startingPosition.set(0, 0);
+        tempWallData.length = 50;
+        tempWallData.width = 10;
+        tempWallData.rotation = 0;
+        mapData.wallDatas.add(tempWallData);
+
+        tempWallData = new WallData();
+        tempWallData.startingPosition.set(0, -50);
+        tempWallData.length = 50;
+        tempWallData.width = 10;
+        tempWallData.rotation = 20;
+        mapData.wallDatas.add(tempWallData);
 
         // create Grounds
-        mapData.grounds = new Array<Ground>();
-        Array<Vector2> polygonPoints = new Array<Vector2>();
-        polygonPoints.add(new Vector2(-70, -100));
-        //polygonPoints.add(new Vector2(-70, 100));
-        polygonPoints.add(new Vector2(70, 100));
-        //polygonPoints.add(new Vector2(70,-100));
-        Ground tempGround = new Ground(0, 0, 0, polygonPoints, app.assets);
-        mapData.grounds.add(tempGround);
+        GroundData tempGroundData = new GroundData();
+        tempGroundData.startingPosition.set(0, 0);
+        tempGroundData.rotation = 0;
+        tempGroundData.polygonPoints.add(new Vector2(-70, -100));
+        //tempGroundData.polygonPoints.add(new Vector2(-70,100));
+        tempGroundData.polygonPoints.add(new Vector2(70, 100));
+        //tempGroundData.polygonPoints.add(new Vector2(70,-100));
+        mapData.groundDatas.add(tempGroundData);
 
         // create holes
-        mapData.holes = new Array<Hole>();
-        Hole tempHole = new Hole(0, 50, 7);
-        mapData.holes.add(tempHole);
+        HoleData tempHoleData = new HoleData();
+        tempHoleData.startingPosition.set(0, 50);
+        tempHoleData.radius = 7;
+        mapData.holeDatas.add(tempHoleData);
 
         return mapData;
-    }
-
-    public int getPar() {
-        return par;
-    }
-
-    public float getMaxShootSpeed() {
-        return maxShootSpeed;
-    }
-
-    public Vector3 getCameraStartingPosition() {
-        return cameraStartingPosition;
-    }
-
-    public float getCmPerDisplayWidth() {
-        return cmPerDisplayWidth;
-    }
-
-    public Vector3 getBallStartingPosition() {
-        return ballStartingPosition;
-    }
-
-    public float getBallRadius() {
-        return ballRadius;
-    }
-
-    public Array<Wall> getWalls() {
-        return walls;
-    }
-
-    public Array<Ground> getGrounds() {
-        return grounds;
-    }
-
-    public Array<Hole> getHoles() {
-        return holes;
     }
 }
