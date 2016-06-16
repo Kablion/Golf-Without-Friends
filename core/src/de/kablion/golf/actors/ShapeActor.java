@@ -27,6 +27,8 @@ import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 
+import de.kablion.golf.data.CollisionData;
+
 public class ShapeActor extends Actor {
 
     //Position attribute - (x, y)
@@ -48,8 +50,7 @@ public class ShapeActor extends Actor {
     public static final int NONE = 0;
     public static final int CIRCLE = 1;
     public static final int RECTANGLE = 2;
-    public static final int TRIANGLE = 3;
-    public static final int POLYGON = 4;
+    public static final int POLYGON = 3;
 
 
     private Shape2D shape;
@@ -57,7 +58,10 @@ public class ShapeActor extends Actor {
     private Texture texture;
     private Mesh mesh;
 
-    private boolean repeatTexture;
+    private boolean repeatXTexture;
+    private boolean repeatYTexture;
+    private boolean mirroredXTexture;
+    private boolean mirroredYTexture;
     private float textureWidth;
     private float textureHeight;
 
@@ -120,7 +124,7 @@ public class ShapeActor extends Actor {
                 vertices[i * 2 + 1] = polygonPoints.get(i).y;
             }
             result = new Polygon(vertices);
-            ((Polygon) result).setPosition(positionX, positionY);
+            ((Polygon) result).setOrigin(positionX, positionY);
 
         } else {
             // type = POLYGON;
@@ -130,7 +134,7 @@ public class ShapeActor extends Actor {
                 vertices[i * 2 + 1] = polygonPoints.get(i).y;
             }
             result = new Polygon(vertices);
-            ((Polygon) result).setPosition(positionX, positionY);
+            ((Polygon) result).setOrigin(positionX, positionY);
 
 
         }
@@ -148,11 +152,7 @@ public class ShapeActor extends Actor {
         } else if (shape instanceof Rectangle) {
             result = RECTANGLE;
         } else if (shape instanceof Polygon) {
-            if (((Polygon) shape).getVertices().length == 6) {
-                result = TRIANGLE;
-            } else {
                 result = POLYGON;
-            }
         } else {
             result = NONE;
         }
@@ -200,6 +200,12 @@ public class ShapeActor extends Actor {
 
             Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_S, GL20.GL_REPEAT);
             Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_T, GL20.GL_REPEAT);
+            if (mirroredXTexture) {
+                Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_S, GL20.GL_MIRRORED_REPEAT);
+            }
+            if (mirroredYTexture) {
+                Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_T, GL20.GL_MIRRORED_REPEAT);
+            }
 
             //render the mesh
             mesh.render(batch.getShader(), GL20.GL_TRIANGLES, 0, mesh.getNumIndices());
@@ -214,6 +220,9 @@ public class ShapeActor extends Actor {
         shapes.set(ShapeRenderer.ShapeType.Line);
         shapes.setColor(getStage().getDebugColor());
         shapes.rect(getX(), getY(), getOriginX(), getOriginY(), getWidth(), getHeight(), getScaleX(), getScaleY(), 0);
+        // Cross on the Origin
+        shapes.line(getOriginX() - 1, getOriginY() - 1, getOriginX() + 1, getOriginY() + 1);
+        shapes.line(getOriginX() - 1, getOriginY() + 1, getOriginX() + 1, getOriginY() - 1);
     }
 
     @Override
@@ -240,12 +249,22 @@ public class ShapeActor extends Actor {
 
     public void setTexture(Texture texture) {
         this.texture = texture;
-        this.repeatTexture = false;
+        this.repeatXTexture = false;
+        this.repeatYTexture = false;
+        this.mirroredXTexture = false;
+        this.mirroredYTexture = false;
     }
 
-    public void setTexture(Texture texture, float width, float height) {
+    public void setTexture(Texture texture, float width, float height, boolean mirrorX, boolean mirrorY) {
         this.texture = texture;
-        this.repeatTexture = true;
+        if (width != 0) {
+            this.repeatXTexture = true;
+        }
+        if (height != 0) {
+            this.repeatYTexture = true;
+        }
+        this.mirroredXTexture = mirrorX;
+        this.mirroredYTexture = mirrorY;
         this.textureWidth = width;
         this.textureHeight = height;
         updateMesh();
@@ -255,6 +274,10 @@ public class ShapeActor extends Actor {
         this.shape = shape;
         type = findShapeType(this.shape);
         updateMesh();
+        updateTransformation(0, 0, 0);
+    }
+
+    public void updateBounds() {
         if (mesh != null) {
             //setSize(mesh.calculateBoundingBox().getWidth(),mesh.calculateBoundingBox().getHeight());
             BoundingBox boundingBox = mesh.calculateBoundingBox();
@@ -294,16 +317,17 @@ public class ShapeActor extends Actor {
 
     private float[] getUVRange(Rectangle boundingRect) {
         float minU, minV, maxU, maxV;
-        if (repeatTexture) {
+        minU = 0;
+        minV = 0;
+        maxU = 1;
+        maxV = 1;
+        if (repeatXTexture) {
             minU = boundingRect.getWidth() - (boundingRect.getWidth() / textureWidth) / 2;
-            minV = boundingRect.getHeight() - (boundingRect.getHeight() / textureHeight) / 2;
             maxU = boundingRect.getWidth() + (boundingRect.getWidth() / textureWidth) / 2;
+        }
+        if (repeatYTexture) {
+            minV = boundingRect.getHeight() - (boundingRect.getHeight() / textureHeight) / 2;
             maxV = boundingRect.getHeight() + (boundingRect.getHeight() / textureHeight) / 2;
-        } else {
-            minU = 0;
-            minV = 0;
-            maxU = 1;
-            maxV = 1;
         }
         return new float[]{minU, minV, maxU, maxV};
     }
@@ -386,7 +410,7 @@ public class ShapeActor extends Actor {
 
                 meshBuilder.rect(bottomLeft, bottomRight, topRight, topleft, normal);
 
-            } else if (type == TRIANGLE | type == POLYGON) {  ////////////////////////////////// Polygon
+            } else if (type == POLYGON) {  ////////////////////////////////// Polygon
 
                 Polygon polygon = (Polygon) this.shape;
 
@@ -428,7 +452,7 @@ public class ShapeActor extends Actor {
             this.mesh = meshBuilder.end();
 
             // transforming the mesh
-            this.transform.idt();
+            /*this.transform.idt();
             if (getRotation() != 0) {
                 // rotating
                 this.transform = new Matrix4();
@@ -438,9 +462,258 @@ public class ShapeActor extends Actor {
             // translate from 0,0 to to Origin
             this.transform = new Matrix4();
             this.transform.translate(getOriginX(), getOriginY(), 0);
-            this.mesh.transform(transform);
+            this.mesh.transform(transform);*/
 
         }
+    }
+
+    public CollisionData checkCollisionWith(ShapeActor actor) {
+        CollisionData collisionData = null;
+        if (checkBoundsIntersect(this, actor)) {
+            if (type == CIRCLE) {
+                if (actor.getType() == CIRCLE) {
+                    collisionData = checkCollisionCircleCircle(this, actor);
+                } else if (actor.getType() == RECTANGLE) {
+                    collisionData = checkCollisionCircleRectangle(this, actor);
+                } else if (actor.getType() == POLYGON) {
+                    collisionData = checkCollisionCirclePolygon(this, actor);
+                }
+            } else if (type == RECTANGLE) {
+                // First only the ball (type==CIRCLE) detection is needed
+            } else if (type == POLYGON) {
+                // First only the ball (type==CIRCLE) detection is needed
+            }
+        }
+
+        return collisionData;
+    }
+
+    public boolean checkBoundsIntersect(ShapeActor actor1, ShapeActor actor2) {
+        boolean intersect = true;
+        if (actor2.getX() + actor2.getWidth() < actor1.getX() | actor1.getX() + actor1.getWidth() < actor2.getX()) {
+            if (actor2.getY() + actor2.getHeight() < actor1.getY() | actor1.getY() + actor1.getHeight() < actor2.getY()) {
+                // separated
+                intersect = false;
+            }
+        }
+        return intersect;
+    }
+
+    public static CollisionData checkCollisionCircleCircle(ShapeActor main, ShapeActor second) {
+        CollisionData collisionData = null;
+        Vector2 mOrigin = new Vector2(main.getOriginX(), main.getOriginY());
+        Vector2 sOrigin = new Vector2(second.getOriginX(), second.getOriginY());
+        if (mOrigin.dst(sOrigin) < main.getWidth() / 2 + second.getWidth() / 2) {
+            collisionData = new CollisionData();
+            collisionData.normalVector.set(new Vector2(mOrigin.x - sOrigin.x, mOrigin.y - sOrigin.y));
+            float sumRadius = (main.getWidth() / 2 + second.getWidth() / 2);
+            float distance = mOrigin.dst(sOrigin);
+            collisionData.overlapDistance = sumRadius - distance;
+        }
+        return collisionData;
+    }
+
+    public static CollisionData checkCollisionCircleRectangle(ShapeActor main, ShapeActor second) {
+        CollisionData collisionData = null;
+
+        Vector2 normal = new Vector2();
+
+        int iMinOlap = 0;
+        float minOverLap = 1000000;
+
+        Circle circle = (Circle) main.getShape();
+
+        //Polygon polygon = (Polygon) second.getShape();
+        Rectangle rect = (Rectangle) second.getShape();
+
+        Vector2 polygonOrigin = new Vector2();
+        rect.getCenter(polygonOrigin);
+
+        float halfWidth = rect.getWidth() / 2;
+        float halfHeight = rect.getHeight() / 2;
+
+        float[] vertices = new float[8];
+        // bottom left
+        vertices[0] = -halfWidth;
+        vertices[1] = -halfHeight;
+
+        // top left
+        vertices[2] = -halfWidth;
+        vertices[3] = +halfHeight;
+
+        // top right
+        vertices[4] = +halfWidth;
+        vertices[5] = +halfHeight;
+
+        // bottom right
+        vertices[6] = +halfWidth;
+        vertices[7] = -halfHeight;
+
+        Vector2 circlePosition = new Vector2(circle.x, circle.y);
+
+        return checkCollisionCirclePolygon(vertices, polygonOrigin, second.getRotation(), circlePosition, circle.radius);
+    }
+
+    public static CollisionData checkCollisionCirclePolygon(ShapeActor main, ShapeActor second) {
+        CollisionData collisionData = null;
+        Vector2 normal = new Vector2();
+
+        int iMinOlap = 0;
+        float minOverLap = 1000000;
+
+        Circle circle = (Circle) main.getShape();
+
+        Polygon polygon = (Polygon) second.getShape();
+        float[] vertices = polygon.getVertices();
+        Vector2 polygonOrigin = new Vector2(polygon.getOriginX(), polygon.getOriginY());
+        Vector2 circlePosition = new Vector2(circle.x, circle.y);
+
+        return checkCollisionCirclePolygon(vertices, polygonOrigin, second.getRotation(), circlePosition, circle.radius);
+    }
+
+    @SuppressWarnings("SuspiciousNameCombination")
+    public static CollisionData checkCollisionCirclePolygon(float[] vertices, Vector2 polygonOrigin, float rotation, Vector2 circlePosition, float circleRadius) {
+        CollisionData collisionData = null;
+        Vector2 normal = new Vector2();
+
+        int iMinOlap = 0;
+        float minOverLap = 1000000;
+
+        Vector2 circlePFromPOrigin = new Vector2(circlePosition.x - polygonOrigin.x, circlePosition.y - polygonOrigin.y);
+
+        if (rotation != 0) {
+            circlePFromPOrigin.rotate(-rotation);
+        }
+
+        Vector2 edgeNormal = new Vector2();
+
+        for (int i = 0; i < vertices.length; i += 2) {
+            // Loop through every edge of the Polygon
+
+            if (i == -1) {
+                // First Projection along the vector from anker to ballCenter
+                edgeNormal.set(circlePFromPOrigin);
+            } else if (i + 2 == vertices.length) {
+                // Edge from last to first Vertex
+                edgeNormal.set(vertices[0] - vertices[i], vertices[1] - vertices[i + 1]);
+                // set to left normal
+                edgeNormal.rotate90(1);
+            } else {
+                // edge from current to next Vertex
+                edgeNormal.set(vertices[i + 2] - vertices[i], vertices[i + 3] - vertices[i + 1]);
+                // set to left normal
+                edgeNormal.rotate90(1);
+            }
+            edgeNormal.setLength(1);
+
+            //setting min max for the polygon on the edgeNormal
+            float polygonMin = Vector2.dot(vertices[0], vertices[1], edgeNormal.x, edgeNormal.y);
+            float polygonMax = Vector2.dot(vertices[0], vertices[1], edgeNormal.x, edgeNormal.y);
+
+            float projectedCircleCenter = Vector2.dot(circlePFromPOrigin.x, circlePFromPOrigin.y, edgeNormal.x, edgeNormal.y);
+            float circleMin = projectedCircleCenter - circleRadius;
+            float circleMax = projectedCircleCenter + circleRadius;
+
+            for (int j = 2; j < vertices.length; j += 2) {
+                // Loop to get Min and Max Vertices
+                float currentProjection = Vector2.dot(vertices[j], vertices[j + 1], edgeNormal.x, edgeNormal.y);
+
+                if (currentProjection > polygonMax) {
+                    polygonMax = currentProjection;
+                }
+
+                if (currentProjection < polygonMin) {
+                    polygonMin = currentProjection;
+                }
+            }
+
+            float overlapDistance;
+            boolean isSeparated = polygonMax < circleMin | circleMax < polygonMin;
+            if (isSeparated) {
+                return null;
+            } else {
+                if (polygonMax - circleMin < circleMax - polygonMin) {
+                    overlapDistance = polygonMax - circleMin;
+                } else {
+                    overlapDistance = circleMax - polygonMin;
+                }
+                if (overlapDistance < minOverLap) {
+                    minOverLap = overlapDistance;
+                    iMinOlap = i;
+                } else if (overlapDistance == minOverLap) {
+                    float projectedOld = Vector2.dot(vertices[iMinOlap], vertices[iMinOlap + 1], edgeNormal.x, edgeNormal.y);
+                    float projectedNew = Vector2.dot(vertices[i], vertices[i + 1], edgeNormal.x, edgeNormal.y);
+                    if (Math.abs(projectedOld - projectedCircleCenter) > Math.abs(projectedNew - projectedCircleCenter)) {
+                        // Distance Edge to ball
+                        // the new Edge is closer
+                        iMinOlap = i;
+                    }
+                }
+            }
+        }
+
+        if (iMinOlap == -1) {
+            // find nearest Corner
+        }
+
+
+        if (iMinOlap + 2 == vertices.length) {
+
+            Vector2 projectOn = new Vector2(vertices[0] - vertices[iMinOlap], vertices[1] - vertices[iMinOlap + 1]);
+            projectOn.setLength(1);
+            float projectedMin = Vector2.dot(vertices[iMinOlap], vertices[iMinOlap + 1], projectOn.x, projectOn.y);
+            float projectedMax = Vector2.dot(vertices[0], vertices[1], projectOn.x, projectOn.y);
+            float projectedCircle = Vector2.dot(circlePFromPOrigin.x, circlePFromPOrigin.y, projectOn.x, projectOn.y);
+            if (projectedCircle < projectedMin) {
+                // Corner
+                normal.set(circlePFromPOrigin.x - vertices[iMinOlap], circlePFromPOrigin.y - vertices[iMinOlap + 1]);
+
+            } else if (projectedCircle > projectedMax) {
+                // Corner
+                normal.set(circlePFromPOrigin.x - vertices[0], circlePFromPOrigin.y - vertices[1]);
+                iMinOlap = 0;
+
+            } else {
+                // Edge
+                normal.set(vertices[0] - vertices[iMinOlap], vertices[1] - vertices[iMinOlap + 1]);
+                // left normal
+                normal.rotate90(1);
+            }
+        } else {
+            Vector2 projectOn = new Vector2(vertices[iMinOlap + 2] - vertices[iMinOlap], vertices[iMinOlap + 3] - vertices[iMinOlap + 1]);
+            projectOn.setLength(1);
+            float projectedMin = Vector2.dot(vertices[iMinOlap], vertices[iMinOlap + 1], projectOn.x, projectOn.y);
+            float projectedMax = Vector2.dot(vertices[iMinOlap + 2], vertices[iMinOlap + 3], projectOn.x, projectOn.y);
+            float projectedCircle = Vector2.dot(circlePFromPOrigin.x, circlePFromPOrigin.y, projectOn.x, projectOn.y);
+
+            if (projectedCircle < projectedMin) {
+                // Corner
+                normal.set(circlePFromPOrigin.x - vertices[iMinOlap], circlePFromPOrigin.y - vertices[iMinOlap + 1]);
+
+            } else if (projectedCircle > projectedMax) {
+                // Corner
+                normal.set(circlePFromPOrigin.x - vertices[iMinOlap + 2], circlePFromPOrigin.y - vertices[iMinOlap + 3]);
+                iMinOlap++;
+
+            } else {
+                // Edge
+                normal.set(vertices[iMinOlap + 2] - vertices[iMinOlap], vertices[iMinOlap + 3] - vertices[iMinOlap + 1]);
+                // left normal
+                normal.rotate90(1);
+                //normal.set(normal.y,-normal.x);
+            }
+        }
+        normal.setLength(1);
+
+        if (rotation != 0) {
+            normal.rotate(rotation);
+        }
+
+        collisionData = new CollisionData();
+        collisionData.normalVector = normal;
+        collisionData.overlapDistance = minOverLap;
+
+        return collisionData;
     }
 
     @Override
@@ -468,28 +741,14 @@ public class ShapeActor extends Actor {
     public void setOriginX(float originX) {
         float oldX = getOriginX();
         super.setOriginX(originX);
-        if (mesh != null) {
-            this.transform = new Matrix4();
-            this.transform.translate(-oldX, 0, 0);
-            this.mesh.transform(this.transform);
-            this.transform = new Matrix4();
-            this.transform.translate(getOriginX(), 0, 0);
-            this.mesh.transform(this.transform);
-        }
+        updateTransformation(oldX, getOriginY(), getRotation());
     }
 
     @Override
     public void setOriginY(float originY) {
         float oldY = getOriginY();
         super.setOriginY(originY);
-        if (mesh != null) {
-            this.transform = new Matrix4();
-            this.transform.translate(0, -oldY, 0);
-            this.mesh.transform(this.transform);
-            this.transform = new Matrix4();
-            this.transform.translate(0, getOriginY(), 0);
-            this.mesh.transform(this.transform);
-        }
+        updateTransformation(getOriginX(), oldY, getRotation());
     }
 
     @Override
@@ -497,23 +756,21 @@ public class ShapeActor extends Actor {
         float oldX = getOriginX();
         float oldY = getOriginY();
         super.setOrigin(originX, originY);
-        if (mesh != null) {
-            this.transform = new Matrix4();
-            this.transform.translate(-oldX, -oldY, 0);
-            this.mesh.transform(this.transform);
-            this.transform = new Matrix4();
-            this.transform.translate(getOriginX(), getOriginY(), 0);
-        }
+        updateTransformation(oldX, oldY, getRotation());
     }
 
     @Override
     public void setRotation(float degrees) {
         float oldDegrees = getRotation();
         super.setRotation(degrees);
+        updateTransformation(getOriginX(), getOriginY(), oldDegrees);
+    }
+
+    public void updateTransformation(float oldOriginX, float oldOriginY, float oldDegrees) {
         if (mesh != null) {
             //translate to 0,0
             this.transform = new Matrix4();
-            this.transform.translate(-getOriginX(), -getOriginY(), 0);
+            this.transform.translate(-oldOriginX, -oldOriginY, 0);
             this.mesh.transform(this.transform);
             // rotate to 0 Rotation
             this.transform = new Matrix4();
@@ -521,12 +778,28 @@ public class ShapeActor extends Actor {
             this.mesh.transform(this.transform);
             // rotate with new Rotation
             this.transform = new Matrix4();
-            this.transform.rotate(0, 0, 1, degrees);
+            this.transform.rotate(0, 0, 1, getRotation());
             this.mesh.transform(this.transform);
             // translate back to Origin
             this.transform = new Matrix4();
-            this.transform.translate(-getOriginX(), -getOriginY(), 0);
+            this.transform.translate(getOriginX(), getOriginY(), 0);
             this.mesh.transform(this.transform);
         }
+        if (type == CIRCLE) {
+            Circle circle = (Circle) getShape();
+            circle.x = getOriginX();
+            circle.y = getOriginY();
+        } else if (type == RECTANGLE) {
+            Rectangle rect = (Rectangle) getShape();
+            rect.setCenter(getOriginX(), getOriginY());
+        } else if (type == POLYGON) {
+            Polygon polygon = (Polygon) getShape();
+            polygon.setOrigin(getOriginX(), getOriginY());
+        }
+        updateBounds();
+    }
+
+    public Shape2D getShape() {
+        return this.shape;
     }
 }

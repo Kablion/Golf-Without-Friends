@@ -3,6 +3,7 @@ package de.kablion.golf.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -54,6 +55,7 @@ public class MainMenuScreen implements Screen {
         this.skin = new Skin();
         this.skin.addRegions(app.assets.get("skins/default.atlas", TextureAtlas.class));
         this.skin.add("default-font", app.font24);
+        this.skin.add("big-font", app.font48);
         this.skin.load(Gdx.files.internal("skins/default.json"));
 
 
@@ -103,8 +105,7 @@ public class MainMenuScreen implements Screen {
 
     private void initStage(){
         rootTable.setFillParent(true);
-        labelTitle = new Label("Main Menu",skin);
-        labelTitle.setFontScale(2);
+        labelTitle = new Label("Main Menu", skin, "big-font", Color.BLACK);
         menuTable.add(labelTitle).padBottom(40);
         menuTable.row();
         menuTable.addAction(sequence(alpha(0), parallel(fadeIn(.5f), moveBy(0, -20, .5f, Interpolation.pow5Out))));

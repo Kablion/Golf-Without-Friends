@@ -1,7 +1,9 @@
 package de.kablion.golf.actors;
 
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -10,7 +12,9 @@ import com.badlogic.gdx.utils.Array;
 
 public class Wall extends ShapeActor {
 
-    public Wall(float x, float y,float length, float width, float rotation) {
+    private final static float TEXTURE_WIDTH = 20;
+
+    public Wall(float x, float y, float length, float width, float rotation, AssetManager assets) {
         super();
         setOrigin(x, y);
         setRotation(rotation);
@@ -24,6 +28,7 @@ public class Wall extends ShapeActor {
         polygonPoints.add(new Vector2(right,top));
         setPosition(x,y);
         setColor(Color.BROWN);
+        setTexture(assets.get("sprites/textures/wall_texture.png", Texture.class), TEXTURE_WIDTH, 0, false, false);
         setShape(findShape(polygonPoints, x, y));
     }
 }

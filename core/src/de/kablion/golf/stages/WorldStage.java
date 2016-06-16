@@ -68,4 +68,8 @@ public class WorldStage extends Stage {
     public Ball getBall() {
         return world.getBall(player);
     }
+
+    public World getWorld() {
+        return world;
+    }
 }

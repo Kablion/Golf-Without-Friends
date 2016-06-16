@@ -46,7 +46,8 @@ public class LoadingScreen implements Screen {
         app.assets.load("badlogic.jpg", Texture.class);
         app.assets.load("skins/default.atlas", TextureAtlas.class);
         app.assets.load("skins/game_hud.atlas",TextureAtlas.class);
-        app.assets.load("sprites/ground_texture.png", Texture.class);
+        app.assets.load("sprites/textures/ground_texture.png", Texture.class);
+        app.assets.load("sprites/textures/wall_texture.png", Texture.class);
     }
 
     @Override

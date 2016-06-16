@@ -18,7 +18,7 @@ public class Ground extends ShapeActor {
         setOrigin(x, y);
         setRotation(rotation);
         setColor(Color.GREEN);
-        setTexture(assets.get("sprites/ground_texture.png", Texture.class), TEXTURE_WIDTH, TEXTURE_HEIGHT);
+        setTexture(assets.get("sprites/textures/ground_texture.png", Texture.class), TEXTURE_WIDTH, TEXTURE_HEIGHT, false, false);
         setShape(findShape(polygonPoints, x, y));
 
     }

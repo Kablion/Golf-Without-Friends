@@ -62,7 +62,7 @@ public class World extends Group {
         }
 
         for (int i = 0; i < playerAmount; i++) {
-            balls.add(mapData.ballData.toActor(app.assets));
+            balls.add(mapData.ballData.toActor(app.assets, this));
             addActor(balls.get(i));
         }
     }
@@ -83,5 +83,21 @@ public class World extends Group {
         } else {
             throw new IllegalArgumentException("There is no Player "+ player);
         }
+    }
+
+    public Array<Ball> getBalls() {
+        return balls;
+    }
+
+    public Array<Wall> getWalls() {
+        return walls;
+    }
+
+    public Array<Ground> getGrounds() {
+        return grounds;
+    }
+
+    public Array<Hole> getHoles() {
+        return holes;
     }
 }

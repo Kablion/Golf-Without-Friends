@@ -18,7 +18,7 @@ import de.kablion.golf.data.actors.WallData;
 public class MapData {
 
     public static final int DEFAULT_PAR = 2;
-    public static final float DEFAULT_MAX_SHOOT_SPEED = 2;
+    public static final float DEFAULT_MAX_SHOOT_SPEED = 50;
 
     public int par;
     public float maxShootSpeed;
@@ -51,10 +51,10 @@ public class MapData {
         MapData mapData = new MapData();
 
         mapData.par = 2;
-        mapData.maxShootSpeed = 5;
+        mapData.maxShootSpeed = 100;
 
         mapData.cameraData.cmPerDisplayWidth = 150;
-        mapData.cameraData.startingPosition = new Vector3(0, 0, 100);
+        mapData.cameraData.startingPosition = new Vector3(0, 0, 0);
 
         mapData.ballData.radius = 5;
         mapData.ballData.startingPosition = new Vector3(0, -25, 0);
@@ -62,7 +62,7 @@ public class MapData {
         // create Walls
         WallData tempWallData = new WallData();
         tempWallData.startingPosition.set(0, 0);
-        tempWallData.length = 50;
+        tempWallData.length = 150;
         tempWallData.width = 10;
         tempWallData.rotation = 0;
         mapData.wallDatas.add(tempWallData);
@@ -80,7 +80,7 @@ public class MapData {
         tempGroundData.rotation = 0;
         tempGroundData.polygonPoints.add(new Vector2(-70, -100));
         //tempGroundData.polygonPoints.add(new Vector2(-70,100));
-        tempGroundData.polygonPoints.add(new Vector2(70, 100));
+        //tempGroundData.polygonPoints.add(new Vector2(70, 100));
         //tempGroundData.polygonPoints.add(new Vector2(70,-100));
         mapData.groundDatas.add(tempGroundData);
 

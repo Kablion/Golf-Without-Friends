@@ -29,6 +29,7 @@ public class Application extends Game {
 	public ShapeRenderer shapeRenderer;
 
 	public BitmapFont font24;
+	public BitmapFont font48;
 
 	//Screens
 	public LoadingScreen loadingScreen;
@@ -82,6 +83,8 @@ public class Application extends Game {
 		params.size = 50;
 		params.color = Color.BLACK;
 		font24 = generator.generateFont(params);
+		params.size = 100;
+		font48 = generator.generateFont(params);
 		generator.dispose();
 	}
 

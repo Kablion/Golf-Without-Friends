@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -28,6 +29,8 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 
 import de.kablion.golf.Application;
+import de.kablion.golf.actors.Ball;
+import javafx.scene.control.Tab;
 
 import static de.kablion.golf.utils.Constants.*;
 
@@ -44,12 +47,19 @@ public class HUDStage extends Stage {
 
     private Image cameraOverlay;
     private Label strokeLabel;
+    private Label fpsLabel;
     private ImageButton shootButton;
     private ImageButton cameraButton;
     private ImageButton backButton;
     private Slider powerBar;
 
     private Vector3 shootVelocity;
+    // FPS which is currently shown
+    private float fpsCurrent;
+    // When the fpsShown was last updated
+    private long fpsUpdated;
+    // How long will the fps Stay on the Screen
+    private static final long fpsRestTime = 1;
 
     public HUDStage(Application application, WorldStage stage) {
         super(new ExtendViewport(UI_WIDTH,UI_HEIGHT),application.batch);
@@ -68,6 +78,7 @@ public class HUDStage extends Stage {
         this.skin.addRegions(app.assets.get("skins/default.atlas", TextureAtlas.class));
         this.skin.add("default-font", app.font24);
         this.skin.load(Gdx.files.internal("skins/default.json"));
+        this.shootVelocity.set(0, 0, 0);
 
         initRoot();
         initButtons();
@@ -94,9 +105,15 @@ public class HUDStage extends Stage {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 super.clicked(event, x, y);
-                if (!worldStage.getBall().isMoving()) {
+                if (!worldStage.getBall().isMoving() & !worldStage.getBall().isInHole() & !worldStage.getBall().isOffGround()) {
                     worldStage.getBall().shoot(shootVelocity);
+                    strokeLabel.setText("Stroke: " + worldStage.getBall().getStroke());
+                } else if (worldStage.getBall().isInHole()) {
+                    app.setScreen(app.gameScreen);
+                } else if (worldStage.getBall().isOffGround()) {
+                    worldStage.getBall().resetBeforeShot();
                 }
+
             }
         });
         shootBar.add(powerBar).left().expandX().fill().padLeft(10).padRight(10);
@@ -112,6 +129,9 @@ public class HUDStage extends Stage {
         Table leftButtons = new Table();
         leftButtons.align(Align.left);
         buttons.add(leftButtons).expand().fill().left();
+        Table centerLabels = new Table();
+        centerLabels.align(Align.center);
+        buttons.add(centerLabels).width(0).center();
         Table rightButtons = new Table();
         rightButtons.align(Align.right);
         buttons.add(rightButtons).expand().fill().right();
@@ -126,6 +146,11 @@ public class HUDStage extends Stage {
             }
         });
         leftButtons.add(backButton).width(HUD_BUTTON_SIZE).height(HUD_BUTTON_SIZE);
+
+        Label.LabelStyle labelStyle = new Label.LabelStyle(app.font24, Color.BLACK);
+        fpsLabel = new Label("FPS: ", labelStyle);
+        fpsLabel.setFontScale(0.5f);
+        centerLabels.add(fpsLabel);
 
         cameraButton = new ImageButton(hudSkin, "camera-mode-toggle");
         cameraButton.addListener(new ClickListener() {
@@ -158,22 +183,35 @@ public class HUDStage extends Stage {
 
     private void initStrokeLabel() {
         Label.LabelStyle labelStyle = new Label.LabelStyle(app.font24, Color.BLACK);
-        strokeLabel = new Label("Stroke: ",labelStyle);
+        strokeLabel = new Label("Stroke: 0", labelStyle);
 
-        rootTable.add(strokeLabel).align(Align.bottomRight);
+        rootTable.add(strokeLabel).align(Align.bottomRight).padRight(20);
+    }
+
+    @Override
+    public void act(float delta) {
+        super.act(delta);
+
+        float fps = 1 / delta;
+        if (fpsUpdated + fpsRestTime * 500 < System.currentTimeMillis()) {
+            fpsCurrent = fps;
+            fpsUpdated = System.currentTimeMillis();
+            fpsLabel.setText("FPS: " + MathUtils.round(fpsCurrent));
+        }
     }
 
     @Override
     public void draw() {
         super.draw();
-        if (!worldStage.getBall().isMoving()) {
-            app.shapeRenderer.setColor(Color.GRAY);
+        Ball ball = worldStage.getBall();
+        if (!ball.isMoving() & !ball.isInHole() & !ball.isOffGround()) {
+            app.shapeRenderer.setColor(Color.WHITE);
             app.shapeRenderer.setProjectionMatrix(worldStage.getCamera().combined);
             app.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            app.shapeRenderer.rectLine(worldStage.getBall().getOriginX(),
-                    worldStage.getBall().getOriginY(),
-                    worldStage.getBall().getOriginX() + shootVelocity.x,
-                    worldStage.getBall().getOriginY() + shootVelocity.y,
+            app.shapeRenderer.rectLine(ball.getOriginX(),
+                    ball.getOriginY(),
+                    ball.getOriginX() + shootVelocity.x,
+                    ball.getOriginY() + shootVelocity.y,
                     1.5f);
             app.shapeRenderer.end();
         }
@@ -191,9 +229,15 @@ public class HUDStage extends Stage {
         boolean handled = super.touchDown(screenX, screenY, pointer, button);
         if (worldStage.getMode() == WorldStage.PLAY_MODE) {
             if (!handled & pointer == 0) {
-                shootVelocity = worldStage.getCamera().unproject(new Vector3(screenX, screenY, 0));
-                shootVelocity.sub(worldStage.getBall().getOriginX(), worldStage.getBall().getOriginY(), 0);
-                handled = true;
+                Vector3 tempShootVelocity = worldStage.getCamera().unproject(new Vector3(screenX, screenY, 0));
+                tempShootVelocity.sub(worldStage.getBall().getOriginX(), worldStage.getBall().getOriginY(), 0);
+                if (tempShootVelocity.len() <= worldStage.getWorld().getMapData().maxShootSpeed * 2) {
+                    if (tempShootVelocity.len() > worldStage.getWorld().getMapData().maxShootSpeed) {
+                        tempShootVelocity.setLength(worldStage.getWorld().getMapData().maxShootSpeed);
+                    }
+                    shootVelocity = tempShootVelocity;
+                    handled = true;
+                }
             }
         }
         return handled;
@@ -204,9 +248,15 @@ public class HUDStage extends Stage {
         boolean handled = super.touchDragged(screenX, screenY, pointer);
         if (worldStage.getMode() == WorldStage.PLAY_MODE) {
             if (!handled & pointer == 0) {
-                shootVelocity = worldStage.getCamera().unproject(new Vector3(screenX, screenY, 0));
-                shootVelocity.sub(worldStage.getBall().getOriginX(), worldStage.getBall().getOriginY(), 0);
-                handled = true;
+                Vector3 tempShootVelocity = worldStage.getCamera().unproject(new Vector3(screenX, screenY, 0));
+                tempShootVelocity.sub(worldStage.getBall().getOriginX(), worldStage.getBall().getOriginY(), 0);
+                if (tempShootVelocity.len() <= worldStage.getWorld().getMapData().maxShootSpeed * 2) {
+                    if (tempShootVelocity.len() > worldStage.getWorld().getMapData().maxShootSpeed) {
+                        tempShootVelocity.setLength(worldStage.getWorld().getMapData().maxShootSpeed);
+                    }
+                    shootVelocity = tempShootVelocity;
+                    handled = true;
+                }
             }
         }
         return handled;
