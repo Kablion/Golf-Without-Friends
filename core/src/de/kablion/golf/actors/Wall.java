@@ -5,8 +5,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 
 
@@ -28,7 +26,7 @@ public class Wall extends ShapeActor {
         polygonPoints.add(new Vector2(right,top));
         setPosition(x,y);
         setColor(Color.BROWN);
-        setTexture(assets.get("sprites/textures/wall_texture.png", Texture.class), TEXTURE_WIDTH, 0, false, false);
+        setTextureRegion(assets.get("spritesheets/textures.atlas", TextureAtlas.class).findRegion("wall_texture"), TEXTURE_WIDTH, 0, false, false);
         setShape(findShape(polygonPoints, x, y));
     }
 }

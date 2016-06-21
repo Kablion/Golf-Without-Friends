@@ -3,8 +3,8 @@ package de.kablion.golf.actors;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 
 
@@ -18,7 +18,7 @@ public class Ground extends ShapeActor {
         setOrigin(x, y);
         setRotation(rotation);
         setColor(Color.GREEN);
-        setTexture(assets.get("sprites/textures/ground_texture.png", Texture.class), TEXTURE_WIDTH, TEXTURE_HEIGHT, false, false);
+        setTextureRegion(assets.get("spritesheets/textures.atlas", TextureAtlas.class).findRegion("ground_texture"), TEXTURE_WIDTH, TEXTURE_HEIGHT, false, false);
         setShape(findShape(polygonPoints, x, y));
 
     }

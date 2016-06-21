@@ -6,6 +6,7 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeType;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
@@ -24,6 +25,7 @@ import static de.kablion.golf.utils.Constants.*;
 public class Application extends Game {
 
 	public SpriteBatch batch;
+	public PolygonSpriteBatch polyBatch;
 	public OrthographicCamera cameraUI;
 	public AssetManager assets;
 	public ShapeRenderer shapeRenderer;
@@ -40,6 +42,7 @@ public class Application extends Game {
 	public void create () {
 		assets = new AssetManager();
 		batch = new SpriteBatch();
+		polyBatch = new PolygonSpriteBatch();
 
         cameraUI = new OrthographicCamera();
 		cameraUI.setToOrtho(false, UI_WIDTH,UI_HEIGHT);
@@ -69,6 +72,7 @@ public class Application extends Game {
     @Override
 	public void dispose() {
 		batch.dispose();
+		polyBatch.dispose();
 		assets.dispose();
 
 		loadingScreen.dispose();

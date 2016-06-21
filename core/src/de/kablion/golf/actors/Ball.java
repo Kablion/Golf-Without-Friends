@@ -1,5 +1,6 @@
 package de.kablion.golf.actors;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Circle;
@@ -88,7 +89,7 @@ public class Ball extends ShapeActor {
                     }
                     collisionData = tempColData;
                 }
-                deflect(collisionData.normalVector);
+                deflect(collisionData.normalVector.x, collisionData.normalVector.y);
             }
         }
 
@@ -127,18 +128,27 @@ public class Ball extends ShapeActor {
         }
     }
 
-    public void deflect(Vector2 normalVector) {
+    public void deflect(float normalX, float normalY) {
+        Vector2 normalVector = new Vector2(normalX, normalY);
         // reflection = inVector - 2*scalar(onVector, normal)*normal
         float dot2 = Vector2.dot(normalVector.x, normalVector.y, velocity.x, velocity.y) * 2;
         Vector2 reflection = new Vector2(velocity.x - (normalVector.x * dot2),
                 velocity.y - (normalVector.y * dot2));
-        if (reflection.angle(normalVector) < 90) {
+        if (reflection.angle(normalVector) <= 90) {
             velocity.set(reflection.x, reflection.y, 0);
         } else {
+            Gdx.app.error("Deflection - NormalVector angle > 90: ", "Angle: " + reflection.angle(normalVector) + " Velocity: " + velocity.toString() + " Normal: " + normalVector.toString() + " CalcDeflection: " + reflection.toString());
+            // Calc Again with normal rotate 180
+            //normalVector.rotate(180);
+            dot2 = Vector2.dot(normalVector.x, normalVector.y, velocity.x, velocity.y) * 2;
+            reflection = new Vector2(velocity.x - (normalVector.x * dot2),
+                    velocity.y - (normalVector.y * dot2));
+            velocity.set(reflection.x, reflection.y, 0);
+            move(Gdx.graphics.getDeltaTime());
             // Something went wrong
-            velocity.setLength(0);
+            /*velocity.setLength(0);
             Vector2 moveBy = new Vector2(normalVector.x * -(getWidth() / 2), normalVector.y * -(getWidth() / 2));
-            moveBy(moveBy);
+            moveBy(moveBy);*/
 
         }
     }

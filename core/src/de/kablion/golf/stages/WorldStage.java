@@ -20,7 +20,7 @@ public class WorldStage extends Stage {
     private World world;
 
     public WorldStage(Application app, World world, int player) {
-        super(new ExtendViewport(10,10),app.batch);
+        super(new ExtendViewport(10, 10), app.polyBatch);
         this.app = app;
         this.world = world;
         this.player = player;

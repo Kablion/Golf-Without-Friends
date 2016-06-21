@@ -20,6 +20,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.VerticalGroup;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
@@ -99,15 +100,26 @@ public class HUDStage extends Stage {
 
     private void initShootBar() {
         shootBar = new Table();
-        powerBar = new Slider(0,1,0.01f,false,skin);
+        powerBar = new Slider(0.001f, 1, 0.001f, false, skin);
+        powerBar.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                if (shootVelocity.x == 0 & shootVelocity.y == 0) {
+                    shootVelocity.set(0, 1, 0);
+                }
+                shootVelocity.setLength(powerBar.getValue() * worldStage.getWorld().getMapData().maxShootSpeed);
+            }
+        });
         shootButton = new ImageButton(hudSkin, "shoot-button");
         shootButton.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 super.clicked(event, x, y);
                 if (!worldStage.getBall().isMoving() & !worldStage.getBall().isInHole() & !worldStage.getBall().isOffGround()) {
-                    worldStage.getBall().shoot(shootVelocity);
-                    strokeLabel.setText("Stroke: " + worldStage.getBall().getStroke());
+                    if (powerBar.getValue() > 0.01f) {
+                        worldStage.getBall().shoot(shootVelocity);
+                        strokeLabel.setText("Stroke: " + worldStage.getBall().getStroke());
+                    }
                 } else if (worldStage.getBall().isInHole()) {
                     app.setScreen(app.gameScreen);
                 } else if (worldStage.getBall().isOffGround()) {
@@ -198,6 +210,13 @@ public class HUDStage extends Stage {
             fpsUpdated = System.currentTimeMillis();
             fpsLabel.setText("FPS: " + MathUtils.round(fpsCurrent));
         }
+
+        if (worldStage.getBall().isMoving()) {
+            powerBar.setValue(worldStage.getBall().getSpeed() / Ball.SHOOT_MULTIPLICATOR / worldStage.getWorld().getMapData().maxShootSpeed);
+        }
+        if (worldStage.getBall().isInHole()) {
+            powerBar.setValue(0);
+        }
     }
 
     @Override
@@ -236,6 +255,7 @@ public class HUDStage extends Stage {
                         tempShootVelocity.setLength(worldStage.getWorld().getMapData().maxShootSpeed);
                     }
                     shootVelocity = tempShootVelocity;
+                    powerBar.setValue(shootVelocity.len() / worldStage.getWorld().getMapData().maxShootSpeed);
                     handled = true;
                 }
             }
@@ -255,6 +275,7 @@ public class HUDStage extends Stage {
                         tempShootVelocity.setLength(worldStage.getWorld().getMapData().maxShootSpeed);
                     }
                     shootVelocity = tempShootVelocity;
+                    powerBar.setValue(shootVelocity.len() / worldStage.getWorld().getMapData().maxShootSpeed);
                     handled = true;
                 }
             }

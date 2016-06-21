@@ -9,6 +9,11 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.PixmapPacker;
+import com.badlogic.gdx.graphics.g2d.PolygonSprite;
+import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder.VertexInfo;
@@ -27,7 +32,9 @@ import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 
+import de.kablion.golf.Application;
 import de.kablion.golf.data.CollisionData;
+import de.kablion.golf.utils.RepeatablePolygonSprite;
 
 public class ShapeActor extends Actor {
 
@@ -52,10 +59,11 @@ public class ShapeActor extends Actor {
     public static final int RECTANGLE = 2;
     public static final int POLYGON = 3;
 
-
     private Shape2D shape;
+    private RepeatablePolygonSprite repeatablePolygonSprite;
     private int type;
-    private Texture texture;
+    private TextureRegion textureRegion;
+    private TextureRegion whiteTextureRegion;
     private Mesh mesh;
 
     private boolean repeatXTexture;
@@ -95,6 +103,14 @@ public class ShapeActor extends Actor {
         setShape(null);
         setOrigin(0, 0);
         init();
+    }
+
+    private void init() {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(Color.WHITE);
+        pixmap.fill();
+        whiteTextureRegion = new TextureRegion(new Texture(pixmap));
+        setColor(Color.PINK);
     }
 
     public static Shape2D findShape(Array<Vector2> polygonPoints, float positionX, float positionY) {
@@ -161,42 +177,13 @@ public class ShapeActor extends Actor {
     }
 
     @Override
-    public void setColor(Color color) {
-        super.setColor(color);
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(getColor());
-        pixmap.fill();
-        this.colorTexture = new Texture(pixmap);
-        pixmap.dispose();
-    }
-
-    @Override
-    public void setColor(float r, float g, float b, float a) {
-        super.setColor(r, g, b, a);
-        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
-        pixmap.setColor(getColor());
-        pixmap.fill();
-        this.colorTexture = new Texture(pixmap);
-        pixmap.dispose();
-    }
-
-    private void init() {
-        setColor(Color.PINK);
-    }
-
-    @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
 
-        Gdx.gl.glEnable(GL20.GL_BLEND);
+        /*Gdx.gl.glEnable(GL20.GL_BLEND);
 
         if (mesh != null & isVisible()) {
 
-            if (texture == null) {
-                colorTexture.bind();
-            } else {
-                texture.bind();
-            }
 
             Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_S, GL20.GL_REPEAT);
             Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_T, GL20.GL_REPEAT);
@@ -210,6 +197,9 @@ public class ShapeActor extends Actor {
             //render the mesh
             mesh.render(batch.getShader(), GL20.GL_TRIANGLES, 0, mesh.getNumIndices());
 
+        }*/
+        if (repeatablePolygonSprite != null) {
+            repeatablePolygonSprite.draw((PolygonSpriteBatch) batch);
         }
     }
 
@@ -231,11 +221,11 @@ public class ShapeActor extends Actor {
         if (mesh != null) {
             mesh.dispose();
         }
-        if (texture != null) {
-            texture.dispose();
+        if (textureRegion != null) {
+            textureRegion.getTexture().dispose();
         }
-        if (colorTexture != null) {
-            colorTexture.dispose();
+        if (whiteTextureRegion != null) {
+            whiteTextureRegion.getTexture().dispose();
         }
     }
 
@@ -243,20 +233,12 @@ public class ShapeActor extends Actor {
         return type;
     }
 
-    public Texture getTexture() {
-        return texture;
+    public void setTextureRegion(TextureRegion textureRegion) {
+        setTextureRegion(textureRegion, 0, 0, false, false);
     }
 
-    public void setTexture(Texture texture) {
-        this.texture = texture;
-        this.repeatXTexture = false;
-        this.repeatYTexture = false;
-        this.mirroredXTexture = false;
-        this.mirroredYTexture = false;
-    }
-
-    public void setTexture(Texture texture, float width, float height, boolean mirrorX, boolean mirrorY) {
-        this.texture = texture;
+    public void setTextureRegion(TextureRegion textureRegion, float width, float height, boolean mirrorX, boolean mirrorY) {
+        this.textureRegion = textureRegion;
         if (width != 0) {
             this.repeatXTexture = true;
         }
@@ -267,13 +249,13 @@ public class ShapeActor extends Actor {
         this.mirroredYTexture = mirrorY;
         this.textureWidth = width;
         this.textureHeight = height;
-        updateMesh();
+        updateSprite();
     }
 
     public void setShape(Shape2D shape) {
         this.shape = shape;
         type = findShapeType(this.shape);
-        updateMesh();
+        updateSprite();
         updateTransformation(0, 0, 0);
     }
 
@@ -365,13 +347,14 @@ public class ShapeActor extends Actor {
         return unprojVertices;
     }
 
+
     private void updateMesh() {
         this.mesh = null;
-
+        repeatablePolygonSprite = null;
 
         if (type == NONE) {
-
         } else {
+            repeatablePolygonSprite = new RepeatablePolygonSprite();
             MeshBuilder meshBuilder = new MeshBuilder();
             meshBuilder.begin(VERTEX_ATTRIBUTES);
             meshBuilder.setColor(Color.WHITE);
@@ -463,6 +446,76 @@ public class ShapeActor extends Actor {
             this.transform = new Matrix4();
             this.transform.translate(getOriginX(), getOriginY(), 0);
             this.mesh.transform(transform);*/
+
+        }
+    }
+
+    private void updateSprite() {
+
+        if (type == NONE) {
+            repeatablePolygonSprite = null;
+        } else {
+            float[] vertices = null;
+
+            if (type == CIRCLE) { ////////////////////////////////// Circle
+                MeshBuilder meshBuilder = new MeshBuilder();
+                meshBuilder.begin(new VertexAttributes(new VertexAttribute(VertexAttributes.Usage.Position, POSITION_COMPONENTS, ShaderProgram.POSITION_ATTRIBUTE)));
+
+                Circle circle = (Circle) this.shape;
+                int divisions = 20;
+                if (circle.radius > 50) divisions = 50;
+                MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
+
+                //EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, circle.x, circle.y, 0, 0, 0, 1);
+                EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, 0, 0, 0, 0, 0, 1);
+
+                Mesh mesh = meshBuilder.end();
+                vertices = new float[mesh.getNumVertices()];
+                mesh.getVertices(vertices);
+
+            } else if (type == RECTANGLE) {  ////////////////////////////////// Rectangle
+                Rectangle rect = ((Rectangle) this.shape);
+
+                vertices = new float[8];
+                int i = 0;
+
+                float halfWidth = rect.getWidth() / 2;
+                float halfHeight = rect.getHeight() / 2;
+
+                // Bottom Left
+                vertices[i++] = -halfWidth;
+                vertices[i++] = -halfHeight;
+
+                // Top Left
+                vertices[i++] = -halfWidth;
+                vertices[i++] = halfHeight;
+
+                // Top Right
+                vertices[i++] = halfWidth;
+                vertices[i++] = halfHeight;
+
+                // Bottom Right
+                vertices[i++] = halfWidth;
+                vertices[i++] = -halfHeight;
+
+            } else if (type == POLYGON) {  ////////////////////////////////// Polygon
+
+                Polygon polygon = (Polygon) this.shape;
+
+                vertices = polygon.getVertices();
+
+            }
+            if (vertices != null) {
+                this.repeatablePolygonSprite = new RepeatablePolygonSprite();
+                this.repeatablePolygonSprite.setVertices(vertices);
+                if (this.textureRegion != null) {
+                    this.repeatablePolygonSprite.setTextureRegion(textureRegion, RepeatablePolygonSprite.WrapType.REPEAT, RepeatablePolygonSprite.WrapType.REPEAT);
+                    this.repeatablePolygonSprite.setColor(Color.WHITE);
+                } else {
+                    this.repeatablePolygonSprite.setTextureRegion(whiteTextureRegion, RepeatablePolygonSprite.WrapType.STRETCH, RepeatablePolygonSprite.WrapType.STRETCH);
+                    this.repeatablePolygonSprite.setColor(this.getColor());
+                }
+            }
 
         }
     }
