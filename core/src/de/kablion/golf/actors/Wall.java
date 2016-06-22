@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 
+import de.kablion.golf.utils.RepeatablePolygonSprite;
+
 
 public class Wall extends ShapeActor {
 
@@ -26,7 +28,11 @@ public class Wall extends ShapeActor {
         polygonPoints.add(new Vector2(right,top));
         setPosition(x,y);
         setColor(Color.BROWN);
-        setTextureRegion(assets.get("spritesheets/textures.atlas", TextureAtlas.class).findRegion("wall_texture"), TEXTURE_WIDTH, 0, false, false);
+        setTextureRegion(assets.get("spritesheets/textures.atlas", TextureAtlas.class).findRegion("wall_texture"),
+                TEXTURE_WIDTH,
+                0,
+                RepeatablePolygonSprite.WrapType.REPEAT,
+                RepeatablePolygonSprite.WrapType.STRETCH);
         setShape(findShape(polygonPoints, x, y));
     }
 }

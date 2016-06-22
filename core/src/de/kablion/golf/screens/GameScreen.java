@@ -45,7 +45,7 @@ public class GameScreen implements Screen {
 
         world.reset();
         worldStage.reset();
-        //worldStage.setDebugAll(true);
+        worldStage.setDebugAll(true);
         hudStage.reset();
         //hudStage.setDebugAll(true);
     }

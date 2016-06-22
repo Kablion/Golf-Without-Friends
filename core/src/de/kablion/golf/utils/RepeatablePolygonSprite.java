@@ -30,11 +30,12 @@ public class RepeatablePolygonSprite {
          */
 
         public static final int STRETCH = 0;
-        public static final int REPEAT = 1;
-        public static final int REPEAT_MIRRORED = 2;
+        public static final int FILL = 1;
+        public static final int REPEAT = 2;
+        public static final int REPEAT_MIRRORED = 3;
 
         public static void validate(int type) {
-            if (!((type == STRETCH) | (type == REPEAT) | (type == REPEAT_MIRRORED))) {
+            if (!((type == STRETCH) | (type == FILL) | (type == REPEAT) | (type == REPEAT_MIRRORED))) {
                 throw new IllegalArgumentException("The given type is not valid: " + type);
             }
         }
@@ -46,6 +47,8 @@ public class RepeatablePolygonSprite {
     private TextureRegion textureRegion;
 
     private Vector2 textureOffset = new Vector2();
+    private float textureWidth = 0;
+    private float textureHeight = 0;
 
     private boolean dirtyGrid = true;
     private boolean dirtyAttributes = true;
@@ -87,12 +90,12 @@ public class RepeatablePolygonSprite {
         if (wrapTypeX == WrapType.STRETCH) {
             gridWidth = boundRect.getWidth();
         } else {
-            gridWidth = textureRegion.getRegionWidth();
+            gridWidth = textureWidth;
         }
         if (wrapTypeY == WrapType.STRETCH) {
             gridHeight = boundRect.getHeight();
         } else {
-            gridHeight = textureRegion.getRegionHeight();
+            gridHeight = textureHeight;
         }
         cols = (int) (Math.ceil(boundRect.getWidth() / gridWidth));
         rows = (int) Math.ceil(boundRect.getHeight() / gridHeight);
@@ -151,10 +154,10 @@ public class RepeatablePolygonSprite {
 
                 float u = (verts[j] % gridWidth) / gridWidth;
                 float v = (verts[j + 1] % gridHeight) / gridHeight;
-                if (verts[j] == col * gridWidth) u = 0f;
-                if (verts[j] == (col + 1) * gridWidth) u = 1f;
-                if (verts[j + 1] == row * gridHeight) v = 0f;
-                if (verts[j + 1] == (row + 1) * gridHeight) v = 1f;
+                if (verts[j] == col * gridWidth + textureOffset.x) u = 0f;
+                if (verts[j] == (col + 1) * gridWidth + textureOffset.x) u = 1f;
+                if (verts[j + 1] == row * gridHeight + textureOffset.y) v = 0f;
+                if (verts[j + 1] == (row + 1) * gridHeight + textureOffset.y) v = 1f;
                 u = textureRegion.getU() + (textureRegion.getU2() - textureRegion.getU()) * u;
                 v = textureRegion.getV() + (textureRegion.getV2() - textureRegion.getV()) * v;
                 fullVerts[idx++] = u;
@@ -191,25 +194,26 @@ public class RepeatablePolygonSprite {
     /**
      * Offsets polygon to 0 - textureOffset coordinate for ease of calculations, later this is put back on final render
      *
-     * @param vertices vertices to offset and copy into
+     * @param vertices vertices to offset
      * @return offsetted vertices
      */
     private float[] offset(float[] vertices) {
-        currentOffset.set(vertices[0], vertices[1]);
-        for (int i = 0; i < vertices.length - 1; i += 2) {
-            if (currentOffset.x > vertices[i]) {
-                currentOffset.x = vertices[i];
+        float[] result = vertices.clone();
+        currentOffset.set(result[0], result[1]);
+        for (int i = 0; i < result.length - 1; i += 2) {
+            if (currentOffset.x > result[i]) {
+                currentOffset.x = result[i];
             }
-            if (currentOffset.y > vertices[i + 1]) {
-                currentOffset.y = vertices[i + 1];
+            if (currentOffset.y > result[i + 1]) {
+                currentOffset.y = result[i + 1];
             }
         }
-        for (int i = 0; i < vertices.length; i += 2) {
-            vertices[i] -= currentOffset.x - textureOffset.x;
-            vertices[i + 1] -= currentOffset.y - textureOffset.y;
+        for (int i = 0; i < result.length; i += 2) {
+            result[i] -= currentOffset.x - textureOffset.x;
+            result[i + 1] -= currentOffset.y - textureOffset.y;
         }
 
-        return vertices;
+        return result;
     }
 
     public void draw(PolygonSpriteBatch batch) {
@@ -233,7 +237,28 @@ public class RepeatablePolygonSprite {
             buildVertices();
         }
 
-        for (int i = 0; i < vertices.size; i++) {
+        for (int col = 0; col < cols; col++) {
+
+            for (int row = 0; row < rows; row++) {
+
+                float[] verts = new float[8];
+                int idx = 0;
+                verts[idx++] = col * gridWidth - textureOffset.x;
+                verts[idx++] = row * gridHeight - textureOffset.y;
+                verts[idx++] = (col) * gridWidth - textureOffset.x;
+                verts[idx++] = (row + 1) * gridHeight - textureOffset.y;
+                verts[idx++] = (col + 1) * gridWidth - textureOffset.x;
+                verts[idx++] = (row + 1) * gridHeight - textureOffset.y;
+                verts[idx++] = (col + 1) * gridWidth - textureOffset.x;
+                verts[idx] = (row) * gridHeight - textureOffset.y;
+
+                float cellX = col * gridWidth + currentOffset.x + x + originX - textureOffset.x;
+                float cellY = row * gridHeight + currentOffset.y + y + originY - textureOffset.y;
+
+                shapes.set(ShapeRenderer.ShapeType.Line);
+                shapes.setColor(Color.BLACK);
+                shapes.rect(cellX, cellY, gridWidth, gridHeight);
+            }
 
         }
     }
@@ -257,6 +282,8 @@ public class RepeatablePolygonSprite {
      */
     public void setTextureRegion(TextureRegion textureRegion, int wrapTypeX, int wrapTypeY) {
         this.textureRegion = textureRegion;
+        this.textureWidth = textureRegion.getRegionWidth();
+        this.textureHeight = textureRegion.getRegionHeight();
         setWrapTypeX(wrapTypeX);
         setWrapTypeY(wrapTypeY);
         dirtyGrid = true;
@@ -267,6 +294,15 @@ public class RepeatablePolygonSprite {
      */
     public void setTextureOffset(float x, float y) {
         this.textureOffset.set(x, y);
+        dirtyGrid = true;
+    }
+
+    /**
+     * sets the position of the texture relative to the origin
+     */
+    public void setTextureSize(float width, float height) {
+        this.textureWidth = width;
+        this.textureHeight = height;
         dirtyGrid = true;
     }
 

@@ -70,6 +70,9 @@ public class ShapeActor extends Actor {
     private boolean repeatYTexture;
     private boolean mirroredXTexture;
     private boolean mirroredYTexture;
+
+    private int wrapTypeX;
+    private int wrapTypeY;
     private float textureWidth;
     private float textureHeight;
 
@@ -207,12 +210,15 @@ public class ShapeActor extends Actor {
     protected void drawDebugBounds(ShapeRenderer shapes) {
 
         if (!getDebug()) return;
-        shapes.set(ShapeRenderer.ShapeType.Line);
+        /*shapes.set(ShapeRenderer.ShapeType.Line);
         shapes.setColor(getStage().getDebugColor());
         shapes.rect(getX(), getY(), getOriginX(), getOriginY(), getWidth(), getHeight(), getScaleX(), getScaleY(), 0);
         // Cross on the Origin
         shapes.line(getOriginX() - 1, getOriginY() - 1, getOriginX() + 1, getOriginY() + 1);
-        shapes.line(getOriginX() - 1, getOriginY() + 1, getOriginX() + 1, getOriginY() - 1);
+        shapes.line(getOriginX() - 1, getOriginY() + 1, getOriginX() + 1, getOriginY() - 1);*/
+
+        if (repeatablePolygonSprite == null) return;
+        repeatablePolygonSprite.drawDebug(shapes);
     }
 
     @Override
@@ -234,10 +240,10 @@ public class ShapeActor extends Actor {
     }
 
     public void setTextureRegion(TextureRegion textureRegion) {
-        setTextureRegion(textureRegion, 0, 0, false, false);
+        setTextureRegion(textureRegion, 0, 0, RepeatablePolygonSprite.WrapType.STRETCH, RepeatablePolygonSprite.WrapType.STRETCH);
     }
 
-    public void setTextureRegion(TextureRegion textureRegion, float width, float height, boolean mirrorX, boolean mirrorY) {
+    public void setTextureRegion(TextureRegion textureRegion, float width, float height, int wrapTypeX, int wrapTypeY) {
         this.textureRegion = textureRegion;
         if (width != 0) {
             this.repeatXTexture = true;
@@ -245,10 +251,10 @@ public class ShapeActor extends Actor {
         if (height != 0) {
             this.repeatYTexture = true;
         }
-        this.mirroredXTexture = mirrorX;
-        this.mirroredYTexture = mirrorY;
         this.textureWidth = width;
         this.textureHeight = height;
+        this.wrapTypeX = wrapTypeX;
+        this.wrapTypeY = wrapTypeY;
         updateSprite();
     }
 
@@ -463,7 +469,7 @@ public class ShapeActor extends Actor {
 
                 Circle circle = (Circle) this.shape;
                 int divisions = 20;
-                if (circle.radius > 50) divisions = 50;
+                //if (circle.radius > 50) divisions = 50;
                 MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
 
                 //EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, circle.x, circle.y, 0, 0, 0, 1);
@@ -472,6 +478,13 @@ public class ShapeActor extends Actor {
                 Mesh mesh = meshBuilder.end();
                 vertices = new float[mesh.getNumVertices()];
                 mesh.getVertices(vertices);
+
+                // remove first (center)
+                float[] tempVerts = new float[vertices.length - 2];
+                for (int i = 0; i < tempVerts.length; i++) {
+                    tempVerts[i] = vertices[i + 2];
+                }
+                vertices = tempVerts;
 
             } else if (type == RECTANGLE) {  ////////////////////////////////// Rectangle
                 Rectangle rect = ((Rectangle) this.shape);
@@ -509,12 +522,16 @@ public class ShapeActor extends Actor {
                 this.repeatablePolygonSprite = new RepeatablePolygonSprite();
                 this.repeatablePolygonSprite.setVertices(vertices);
                 if (this.textureRegion != null) {
-                    this.repeatablePolygonSprite.setTextureRegion(textureRegion, RepeatablePolygonSprite.WrapType.REPEAT, RepeatablePolygonSprite.WrapType.REPEAT);
+                    this.repeatablePolygonSprite.setTextureRegion(textureRegion, wrapTypeX, wrapTypeY);
                     this.repeatablePolygonSprite.setColor(Color.WHITE);
                 } else {
                     this.repeatablePolygonSprite.setTextureRegion(whiteTextureRegion, RepeatablePolygonSprite.WrapType.STRETCH, RepeatablePolygonSprite.WrapType.STRETCH);
                     this.repeatablePolygonSprite.setColor(this.getColor());
                 }
+                this.repeatablePolygonSprite.setPosition(getX(), getY());
+                this.repeatablePolygonSprite.setOrigin(getOriginX(), getOriginY());
+                this.repeatablePolygonSprite.setTextureSize(textureWidth, textureHeight);
+                //this.repeatablePolygonSprite.setTextureOffset(50,50);
             }
 
         }
