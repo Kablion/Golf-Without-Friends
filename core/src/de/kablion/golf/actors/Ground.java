@@ -12,8 +12,8 @@ import de.kablion.golf.utils.RepeatablePolygonSprite;
 
 public class Ground extends ShapeActor {
 
-    private final static float TEXTURE_WIDTH = 20;
-    private final static float TEXTURE_HEIGHT = 20;
+    private final static float TEXTURE_WIDTH = 50;
+    private final static float TEXTURE_HEIGHT = 50;
 
     public Ground(float x, float y, float rotation, Array<Vector2> polygonPoints, AssetManager assets) {
         super();

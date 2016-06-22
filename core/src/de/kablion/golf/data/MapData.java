@@ -76,11 +76,11 @@ public class MapData {
 
         // create Grounds
         GroundData tempGroundData = new GroundData();
-        tempGroundData.startingPosition.set(100, 100);
+        tempGroundData.startingPosition.set(0, 0);
         tempGroundData.rotation = 0;
         tempGroundData.polygonPoints.add(new Vector2(-70, -100));
         tempGroundData.polygonPoints.add(new Vector2(-70, 100));
-        tempGroundData.polygonPoints.add(new Vector2(70, 200));
+        tempGroundData.polygonPoints.add(new Vector2(70, 100));
         //tempGroundData.polygonPoints.add(new Vector2(70,-100));
         mapData.groundDatas.add(tempGroundData);
 

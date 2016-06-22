@@ -217,8 +217,9 @@ public class ShapeActor extends Actor {
         shapes.line(getOriginX() - 1, getOriginY() - 1, getOriginX() + 1, getOriginY() + 1);
         shapes.line(getOriginX() - 1, getOriginY() + 1, getOriginX() + 1, getOriginY() - 1);*/
 
+        // draw grid and vertices in grid
         if (repeatablePolygonSprite == null) return;
-        repeatablePolygonSprite.drawDebug(shapes);
+        repeatablePolygonSprite.drawDebug(shapes, getStage().getDebugColor());
     }
 
     @Override
