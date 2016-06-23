@@ -25,7 +25,8 @@ public class Ground extends ShapeActor {
                 TEXTURE_HEIGHT,
                 RepeatablePolygonSprite.WrapType.REPEAT,
                 RepeatablePolygonSprite.WrapType.REPEAT);
-        setShape(findShape(polygonPoints, x, y));
+        setShape(findShape(polygonPoints));
+        getRepeatablePolygonSprite().setTextureOffset(getBoundingRectangle().width / 2, getBoundingRectangle().height / 2);
 
     }
 

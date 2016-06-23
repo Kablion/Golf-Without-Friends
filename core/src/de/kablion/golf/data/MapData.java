@@ -71,7 +71,7 @@ public class MapData {
         tempWallData.startingPosition.set(0, -50);
         tempWallData.length = 50;
         tempWallData.width = 10;
-        tempWallData.rotation = 20;
+        tempWallData.rotation = 0;
         mapData.wallDatas.add(tempWallData);
 
         // create Grounds
@@ -79,7 +79,7 @@ public class MapData {
         tempGroundData.startingPosition.set(0, 0);
         tempGroundData.rotation = 0;
         tempGroundData.polygonPoints.add(new Vector2(-70, -100));
-        tempGroundData.polygonPoints.add(new Vector2(-70, 100));
+        //tempGroundData.polygonPoints.add(new Vector2(-70, 100));
         tempGroundData.polygonPoints.add(new Vector2(70, 100));
         //tempGroundData.polygonPoints.add(new Vector2(70,-100));
         mapData.groundDatas.add(tempGroundData);

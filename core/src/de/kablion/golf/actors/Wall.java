@@ -16,23 +16,22 @@ public class Wall extends ShapeActor {
 
     public Wall(float x, float y, float length, float width, float rotation, AssetManager assets) {
         super();
-        setOrigin(x, y);
+        setPosition(x, y);
         setRotation(rotation);
 
         float left = -length/2;
         float right = length/2;
-        float top = +width;
-        float bottom = -width;
+        float top = +width / 2;
+        float bottom = -width / 2;
         Array<Vector2> polygonPoints = new Array<Vector2>(2);
         polygonPoints.add(new Vector2(left,bottom));
         polygonPoints.add(new Vector2(right,top));
-        setPosition(x,y);
         setColor(Color.BROWN);
         setTextureRegion(assets.get("spritesheets/textures.atlas", TextureAtlas.class).findRegion("wall_texture"),
                 TEXTURE_WIDTH,
                 0,
                 RepeatablePolygonSprite.WrapType.REPEAT,
                 RepeatablePolygonSprite.WrapType.STRETCH);
-        setShape(findShape(polygonPoints, x, y));
+        setShape(findShape(polygonPoints));
     }
 }

@@ -54,16 +54,16 @@ public class World extends Group {
         }
         for (int i = 0; i < mapData.wallDatas.size; i++) {
             walls.add(mapData.wallDatas.get(i).toActor(app.assets));
-            //addActor(walls.get(i));
+            addActor(walls.get(i));
         }
         for (int i = 0; i < mapData.holeDatas.size; i++) {
             holes.add(mapData.holeDatas.get(i).toActor(app.assets));
-            //addActor(holes.get(i));
+            addActor(holes.get(i));
         }
 
         for (int i = 0; i < playerAmount; i++) {
             balls.add(mapData.ballData.toActor(app.assets, this));
-            //addActor(balls.get(i));
+            addActor(balls.get(i));
         }
     }
 

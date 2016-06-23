@@ -9,10 +9,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.PixmapPacker;
-import com.badlogic.gdx.graphics.g2d.PolygonSprite;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.model.MeshPart;
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
@@ -22,6 +19,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.GeometryUtils;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Rectangle;
@@ -32,27 +30,10 @@ import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 
-import de.kablion.golf.Application;
 import de.kablion.golf.data.CollisionData;
 import de.kablion.golf.utils.RepeatablePolygonSprite;
 
 public class ShapeActor extends Actor {
-
-    //Position attribute - (x, y)
-    public static final int POSITION_COMPONENTS = 2;
-
-    //Color attribute - floatBits(r, g, b, a)
-    public static final int COLOR_COMPONENTS = 4;
-
-    //Texture attribute - (u, v)
-    public static final int TEXTURE_COMPONENTS = 2;
-
-    //Total number of components for all attributes
-    public static final int NUM_COMPONENTS = POSITION_COMPONENTS + 1 + TEXTURE_COMPONENTS;
-
-    public static final VertexAttributes VERTEX_ATTRIBUTES = new VertexAttributes(new VertexAttribute(VertexAttributes.Usage.Position, POSITION_COMPONENTS, ShaderProgram.POSITION_ATTRIBUTE),
-            new VertexAttribute(VertexAttributes.Usage.ColorPacked, COLOR_COMPONENTS, ShaderProgram.COLOR_ATTRIBUTE),
-            new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, TEXTURE_COMPONENTS, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"));
 
     public static final int NONE = 0;
     public static final int CIRCLE = 1;
@@ -60,52 +41,34 @@ public class ShapeActor extends Actor {
     public static final int POLYGON = 3;
 
     private Shape2D shape;
-    private RepeatablePolygonSprite repeatablePolygonSprite;
+    private RepeatablePolygonSprite repeatablePolygonSprite = new RepeatablePolygonSprite();
     private int type;
-    private TextureRegion textureRegion;
     private TextureRegion whiteTextureRegion;
-    private Mesh mesh;
-
-    private boolean repeatXTexture;
-    private boolean repeatYTexture;
-    private boolean mirroredXTexture;
-    private boolean mirroredYTexture;
-
-    private int wrapTypeX;
-    private int wrapTypeY;
-    private float textureWidth;
-    private float textureHeight;
-
-    private Texture colorTexture;
-
-    private Matrix4 transform = new Matrix4();
 
     public ShapeActor(Shape2D shape, float positionX, float positionY) {
         super();
-        setOrigin(positionX, positionY);
-        setShape(shape);
         init();
+        setPosition(positionX, positionY);
+        setShape(shape);
     }
 
     public ShapeActor(Array<Vector2> polygonPoints) {
         super();
-        setOrigin(0, 0);
-        setShape(findShape(polygonPoints, 0, 0));
         init();
+        setShape(findShape(polygonPoints));
     }
 
     public ShapeActor(Array<Vector2> polygonPoints, float positionX, float positionY) {
         super();
-        setOrigin(positionX, positionY);
-        setShape(findShape(polygonPoints, positionX, positionY));
         init();
+        setPosition(positionX, positionY);
+        setShape(findShape(polygonPoints));
     }
 
     public ShapeActor() {
         super();
-        setShape(null);
-        setOrigin(0, 0);
         init();
+        setShape(null);
     }
 
     private void init() {
@@ -114,9 +77,10 @@ public class ShapeActor extends Actor {
         pixmap.fill();
         whiteTextureRegion = new TextureRegion(new Texture(pixmap));
         setColor(Color.PINK);
+        setTextureRegion(null);
     }
 
-    public static Shape2D findShape(Array<Vector2> polygonPoints, float positionX, float positionY) {
+    public static Shape2D findShape(Array<Vector2> polygonPoints) {
         Shape2D result;
 
         if (polygonPoints == null | polygonPoints.size == 0) {
@@ -124,26 +88,16 @@ public class ShapeActor extends Actor {
 
         } else if (polygonPoints.size == 1) {
             // type = CIRCLE;
-            result = new Circle(positionX, positionY, polygonPoints.get(0).len());
+            result = new Circle(0, 0, polygonPoints.get(0).len());
 
         } else if (polygonPoints.size == 2) {
             // type = RECTANGLE;
             result = new Rectangle();
-            float x = polygonPoints.get(0).x + positionX;
-            float y = polygonPoints.get(0).y + positionY;
+            float x = polygonPoints.get(0).x;
+            float y = polygonPoints.get(0).y;
             float width = polygonPoints.get(1).x - polygonPoints.get(0).x;
             float height = polygonPoints.get(1).y - polygonPoints.get(0).y;
             result = new Rectangle(x, y, width, height);
-
-        } else if (polygonPoints.size == 3) {
-            // type = TRIANGLE;
-            float[] vertices = new float[polygonPoints.size * 2];
-            for (int i = 0; i < polygonPoints.size; i++) {
-                vertices[i * 2] = polygonPoints.get(i).x;
-                vertices[i * 2 + 1] = polygonPoints.get(i).y;
-            }
-            result = new Polygon(vertices);
-            ((Polygon) result).setOrigin(positionX, positionY);
 
         } else {
             // type = POLYGON;
@@ -153,7 +107,6 @@ public class ShapeActor extends Actor {
                 vertices[i * 2 + 1] = polygonPoints.get(i).y;
             }
             result = new Polygon(vertices);
-            ((Polygon) result).setOrigin(positionX, positionY);
 
 
         }
@@ -171,7 +124,7 @@ public class ShapeActor extends Actor {
         } else if (shape instanceof Rectangle) {
             result = RECTANGLE;
         } else if (shape instanceof Polygon) {
-                result = POLYGON;
+            result = POLYGON;
         } else {
             result = NONE;
         }
@@ -182,28 +135,7 @@ public class ShapeActor extends Actor {
     @Override
     public void draw(Batch batch, float parentAlpha) {
         super.draw(batch, parentAlpha);
-
-        /*Gdx.gl.glEnable(GL20.GL_BLEND);
-
-        if (mesh != null & isVisible()) {
-
-
-            Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_S, GL20.GL_REPEAT);
-            Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_T, GL20.GL_REPEAT);
-            if (mirroredXTexture) {
-                Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_S, GL20.GL_MIRRORED_REPEAT);
-            }
-            if (mirroredYTexture) {
-                Gdx.gl.glTexParameteri(GL20.GL_TEXTURE_2D, GL20.GL_TEXTURE_WRAP_T, GL20.GL_MIRRORED_REPEAT);
-            }
-
-            //render the mesh
-            mesh.render(batch.getShader(), GL20.GL_TRIANGLES, 0, mesh.getNumIndices());
-
-        }*/
-        if (repeatablePolygonSprite != null) {
-            repeatablePolygonSprite.draw((PolygonSpriteBatch) batch);
-        }
+        repeatablePolygonSprite.draw((PolygonSpriteBatch) batch);
     }
 
     @Override
@@ -218,26 +150,18 @@ public class ShapeActor extends Actor {
         shapes.line(getOriginX() - 1, getOriginY() + 1, getOriginX() + 1, getOriginY() - 1);*/
 
         // draw grid and vertices in grid
-        if (repeatablePolygonSprite == null) return;
         repeatablePolygonSprite.drawDebug(shapes, getStage().getDebugColor());
     }
 
     @Override
     public void clear() {
         super.clear();
-        if (mesh != null) {
-            mesh.dispose();
-        }
-        if (textureRegion != null) {
-            textureRegion.getTexture().dispose();
+        if (this.repeatablePolygonSprite.getTextureRegion() != null) {
+            this.repeatablePolygonSprite.getTextureRegion().getTexture().dispose();
         }
         if (whiteTextureRegion != null) {
             whiteTextureRegion.getTexture().dispose();
         }
-    }
-
-    public int getType() {
-        return type;
     }
 
     public void setTextureRegion(TextureRegion textureRegion) {
@@ -245,247 +169,53 @@ public class ShapeActor extends Actor {
     }
 
     public void setTextureRegion(TextureRegion textureRegion, float width, float height, int wrapTypeX, int wrapTypeY) {
-        this.textureRegion = textureRegion;
-        if (width != 0) {
-            this.repeatXTexture = true;
+        if (textureRegion != null) {
+            this.repeatablePolygonSprite.setTextureRegion(textureRegion, width, height, wrapTypeX, wrapTypeY);
+            this.repeatablePolygonSprite.setColor(Color.WHITE);
+        } else {
+            this.repeatablePolygonSprite.setTextureRegion(whiteTextureRegion, width, height, wrapTypeX, wrapTypeY);
+            this.repeatablePolygonSprite.setColor(getColor());
         }
-        if (height != 0) {
-            this.repeatYTexture = true;
-        }
-        this.textureWidth = width;
-        this.textureHeight = height;
-        this.wrapTypeX = wrapTypeX;
-        this.wrapTypeY = wrapTypeY;
-        updateSprite();
     }
 
     public void setShape(Shape2D shape) {
         this.shape = shape;
-        type = findShapeType(this.shape);
-        updateSprite();
-        updateTransformation(0, 0, 0);
+        this.type = findShapeType(this.shape);
+        updateVertices();
     }
 
-    public void updateBounds() {
-        if (mesh != null) {
-            //setSize(mesh.calculateBoundingBox().getWidth(),mesh.calculateBoundingBox().getHeight());
-            BoundingBox boundingBox = mesh.calculateBoundingBox();
-            Rectangle boundingRect = calculateMeshBounds(this.mesh);
-            setBounds(boundingRect.x, boundingRect.y, boundingRect.getWidth(), boundingRect.getHeight());
-        }
-    }
-
-    private static Rectangle calculateMeshBounds(Mesh mesh) {
-        Rectangle rect = new Rectangle();
-        float[] vertices = new float[mesh.getNumVertices() * NUM_COMPONENTS];
-        mesh.getVertices(vertices);
-        float minX = vertices[0];
-        float minY = vertices[1];
-        float maxX = vertices[0];
-        float maxY = vertices[1];
-
-        for (int i = 5; i < vertices.length; i += NUM_COMPONENTS) {
-            float x = vertices[i];
-            float y = vertices[i + 1];
-            if (x < minX) {
-                minX = x;
-            }
-            if (x > maxX) {
-                maxX = x;
-            }
-            if (y < minY) {
-                minY = y;
-            }
-            if (y > maxY) {
-                maxY = y;
-            }
-        }
-        rect.set(minX, minY, maxX - minX, maxY - minY);
-        return rect;
-    }
-
-    private float[] getUVRange(Rectangle boundingRect) {
-        float minU, minV, maxU, maxV;
-        minU = 0;
-        minV = 0;
-        maxU = 1;
-        maxV = 1;
-        if (repeatXTexture) {
-            minU = boundingRect.getWidth() - (boundingRect.getWidth() / textureWidth) / 2;
-            maxU = boundingRect.getWidth() + (boundingRect.getWidth() / textureWidth) / 2;
-        }
-        if (repeatYTexture) {
-            minV = boundingRect.getHeight() - (boundingRect.getHeight() / textureHeight) / 2;
-            maxV = boundingRect.getHeight() + (boundingRect.getHeight() / textureHeight) / 2;
-        }
-        return new float[]{minU, minV, maxU, maxV};
-    }
-
-    private float[] getUVVertices(float[] xyVertices, Rectangle boundingRect) {
-        float[] uv = new float[xyVertices.length];
-        int MINU = 0, MINV = 1, MAXU = 2, MAXV = 3;
-
-        float[] uvRange = getUVRange(boundingRect);
-
-
-        float uRangeWidth = uvRange[MAXU] - uvRange[MINU];
-        float vRangeWidth = uvRange[MAXV] - uvRange[MINV];
-
-        for (int i = 0; i < xyVertices.length; i += 2) {
-            // U
-            float inPercent = (boundingRect.x - xyVertices[i]) / boundingRect.getWidth();
-            uv[i] = uRangeWidth * inPercent + uvRange[MINU];
-
-            // V
-            inPercent = (boundingRect.y - xyVertices[i + 1]) / boundingRect.getHeight();
-            uv[i + 1] = vRangeWidth * inPercent + uvRange[MINV];
-        }
-
-        return uv;
-    }
-
-    private static float[] getUnprojectedVertices(float[] projVertices, Vector3 origin) {
-        float[] unprojVertices = new float[projVertices.length];
-
-        for (int i = 0; i < projVertices.length; i += 2) {
-            unprojVertices[i] = projVertices[i] + origin.x;
-            unprojVertices[i + 1] = projVertices[i + 1] + origin.y;
-        }
-        return unprojVertices;
-    }
-
-
-    private void updateMesh() {
-        this.mesh = null;
-        repeatablePolygonSprite = null;
+    private void updateVertices() {
 
         if (type == NONE) {
-        } else {
-            repeatablePolygonSprite = new RepeatablePolygonSprite();
-            MeshBuilder meshBuilder = new MeshBuilder();
-            meshBuilder.begin(VERTEX_ATTRIBUTES);
-            meshBuilder.setColor(Color.WHITE);
-
-            if (type == CIRCLE) { ////////////////////////////////// Circle
-                Circle circle = (Circle) this.shape;
-                int divisions = 20;
-                if (circle.radius > 50) divisions = 50;
-                MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
-
-                float[] uvRange = getUVRange(new Rectangle(circle.x - circle.radius,
-                        circle.y - circle.radius,
-                        circle.radius * 2,
-                        circle.radius * 2));
-                meshBuilder.setUVRange(uvRange[2], uvRange[3], uvRange[0], uvRange[1]);
-
-                //EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, circle.x, circle.y, 0, 0, 0, 1);
-                EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, 0, 0, 0, 0, 0, 1);
-
-            } else if (type == RECTANGLE) {  ////////////////////////////////// Rectangle
-                Rectangle rect = ((Rectangle) this.shape);
-
-                MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
-                /*Vector3 bottomLeft = new Vector3(rect.getX(), rect.getY(), 0);
-                Vector3 topRight = new Vector3(rect.getX() + rect.getWidth(), rect.getY() + rect.getHeight(), 0);
-                Vector3 bottomRight = new Vector3(rect.getX() + rect.getWidth(), rect.getY(), 0);
-                Vector3 topleft = new Vector3(rect.getX(), rect.getY() + rect.getHeight(), 0);*/
-                Vector3 bottomLeft = new Vector3(-rect.getWidth() / 2, -rect.getHeight() / 2, 0);
-                Vector3 topRight = new Vector3(rect.getWidth() / 2, rect.getHeight() / 2, 0);
-                Vector3 bottomRight = new Vector3(rect.getWidth() / 2, -rect.getHeight() / 2, 0);
-                Vector3 topleft = new Vector3(-rect.getWidth() / 2, rect.getHeight() / 2, 0);
-                Vector3 normal = new Vector3(0, 0, 1);
-
-                float[] uvRange = getUVRange(rect);
-                meshBuilder.setUVRange(uvRange[0], uvRange[1], uvRange[2], uvRange[3]);
-
-                meshBuilder.rect(bottomLeft, bottomRight, topRight, topleft, normal);
-
-            } else if (type == POLYGON) {  ////////////////////////////////// Polygon
-
-                Polygon polygon = (Polygon) this.shape;
-
-                Vector3 originP = new Vector3(getOriginX(), getOriginY(), 0);
-                float[] vertices = polygon.getVertices();
-                float[] uv = getUVVertices(vertices, polygon.getBoundingRectangle());
-
-
-                Vector2 centerP = new Vector2();
-                centerP = GeometryUtils.polygonCentroid(vertices, 0, vertices.length, centerP);
-                //getCentroid(vertices);
-                float[] centerUV = getUVVertices(new float[]{centerP.x, centerP.y}, polygon.getBoundingRectangle());
-                VertexInfo centerV = new VertexInfo();
-                centerV.setPos(new Vector3(centerP, 0));
-                centerV.setUV(centerUV[0], centerUV[1]);
-
-                for (int i = 0; i < vertices.length; i += 2) {
-                    MeshPart part = meshBuilder.part("part" + i / 2, GL20.GL_TRIANGLES);
-                    Vector3 p1 = new Vector3(vertices[i], vertices[i + 1], 0);
-                    VertexInfo v1 = new VertexInfo();
-                    v1.setPos(p1);
-                    v1.setUV(uv[i], uv[i + 1]);
-                    Vector3 p2;
-                    VertexInfo v2 = new VertexInfo();
-                    if (i + 2 < vertices.length) {
-                        p2 = new Vector3(vertices[i + 2], vertices[i + 3], 0);
-                        v2.setUV(uv[i + 2], uv[i + 3]);
-                    } else {
-                        p2 = new Vector3(vertices[0], vertices[1], 0);
-                        v2.setUV(uv[0], uv[1]);
-                    }
-                    v2.setPos(p2);
-                    meshBuilder.triangle(centerV, v1, v2);
-                    //meshBuilder.triangle(origin, p1, p2);
-                }
-
-            }
-
-            this.mesh = meshBuilder.end();
-
-            // transforming the mesh
-            /*this.transform.idt();
-            if (getRotation() != 0) {
-                // rotating
-                this.transform = new Matrix4();
-                this.transform.rotate(0, 0, 1, getRotation());
-                this.mesh.transform(transform);
-            }
-            // translate from 0,0 to to Origin
-            this.transform = new Matrix4();
-            this.transform.translate(getOriginX(), getOriginY(), 0);
-            this.mesh.transform(transform);*/
-
-        }
-    }
-
-    private void updateSprite() {
-
-        if (type == NONE) {
-            repeatablePolygonSprite = null;
+            this.repeatablePolygonSprite.setVertices(null);
         } else {
             float[] vertices = null;
 
             if (type == CIRCLE) { ////////////////////////////////// Circle
-                MeshBuilder meshBuilder = new MeshBuilder();
-                meshBuilder.begin(new VertexAttributes(new VertexAttribute(VertexAttributes.Usage.Position, POSITION_COMPONENTS, ShaderProgram.POSITION_ATTRIBUTE)));
 
                 Circle circle = (Circle) this.shape;
                 int divisions = 20;
-                //if (circle.radius > 50) divisions = 50;
-                MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
+                if (circle.radius > 50) divisions = 50;
+                vertices = new float[divisions * 2];
+                float radiansPerDivision = (360 / divisions) * MathUtils.degreesToRadians;
+                for (int division = 0; division < divisions; division++) {
+                    vertices[division * 2] = (float) Math.cos(radiansPerDivision * division) * circle.radius;
+                    vertices[division * 2 + 1] = (float) Math.sin(radiansPerDivision * division) * circle.radius;
+                }
 
-                //EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, circle.x, circle.y, 0, 0, 0, 1);
+                /*MeshBuilder meshBuilder = new MeshBuilder();
+                meshBuilder.begin(new VertexAttributes(new VertexAttribute(VertexAttributes.Usage.Position, 2, ShaderProgram.POSITION_ATTRIBUTE)));
+                MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
                 EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, 0, 0, 0, 0, 0, 1);
 
                 Mesh mesh = meshBuilder.end();
-                vertices = new float[mesh.getNumVertices()];
+                vertices = new float[mesh.getNumVertices()*2];
                 mesh.getVertices(vertices);
 
                 // remove first (center)
                 float[] tempVerts = new float[vertices.length - 2];
-                for (int i = 0; i < tempVerts.length; i++) {
-                    tempVerts[i] = vertices[i + 2];
-                }
-                vertices = tempVerts;
+                System.arraycopy(vertices,2,tempVerts,0,vertices.length-2);
+                vertices = tempVerts;*/
 
             } else if (type == RECTANGLE) {  ////////////////////////////////// Rectangle
                 Rectangle rect = ((Rectangle) this.shape);
@@ -520,19 +250,7 @@ public class ShapeActor extends Actor {
 
             }
             if (vertices != null) {
-                this.repeatablePolygonSprite = new RepeatablePolygonSprite();
                 this.repeatablePolygonSprite.setVertices(vertices);
-                if (this.textureRegion != null) {
-                    this.repeatablePolygonSprite.setTextureRegion(textureRegion, wrapTypeX, wrapTypeY);
-                    this.repeatablePolygonSprite.setColor(Color.WHITE);
-                } else {
-                    this.repeatablePolygonSprite.setTextureRegion(whiteTextureRegion, RepeatablePolygonSprite.WrapType.STRETCH, RepeatablePolygonSprite.WrapType.STRETCH);
-                    this.repeatablePolygonSprite.setColor(this.getColor());
-                }
-                this.repeatablePolygonSprite.setPosition(getX(), getY());
-                this.repeatablePolygonSprite.setOrigin(getOriginX(), getOriginY());
-                this.repeatablePolygonSprite.setTextureSize(textureWidth, textureHeight);
-                //this.repeatablePolygonSprite.setTextureOffset(50,50);
             }
 
         }
@@ -561,8 +279,10 @@ public class ShapeActor extends Actor {
 
     public boolean checkBoundsIntersect(ShapeActor actor1, ShapeActor actor2) {
         boolean intersect = true;
-        if (actor2.getX() + actor2.getWidth() < actor1.getX() | actor1.getX() + actor1.getWidth() < actor2.getX()) {
-            if (actor2.getY() + actor2.getHeight() < actor1.getY() | actor1.getY() + actor1.getHeight() < actor2.getY()) {
+        Rectangle rect1 = actor1.getBoundingRectangle();
+        Rectangle rect2 = actor2.getBoundingRectangle();
+        if (rect2.getX() + rect2.getWidth() < rect1.getX() | rect1.getX() + rect1.getWidth() < rect2.getX()) {
+            if (rect2.getY() + rect2.getHeight() < rect1.getY() | rect1.getY() + rect1.getHeight() < rect2.getY()) {
                 // separated
                 intersect = false;
             }
@@ -789,88 +509,158 @@ public class ShapeActor extends Actor {
 
     @Override
     public void setX(float x) {
-        setOriginX(x);
+        super.setX(x);
+        this.repeatablePolygonSprite.setX(x);
     }
 
     @Override
     public void setY(float y) {
-        setOriginY(y);
+        super.setY(y);
+        this.repeatablePolygonSprite.setY(y);
     }
 
     @Override
     public void setPosition(float x, float y) {
-        super.setOrigin(x, y);
+        super.setPosition(x, y);
+        this.repeatablePolygonSprite.setPosition(x, y);
     }
 
     @Override
     public void setPosition(float x, float y, int alignment) {
-        setOrigin(alignment);
-        setOrigin(x, y);
+        setPosition(x, y);
     }
 
     @Override
     public void setOriginX(float originX) {
-        float oldX = getOriginX();
         super.setOriginX(originX);
-        updateTransformation(oldX, getOriginY(), getRotation());
+        this.repeatablePolygonSprite.setOriginX(originX);
     }
 
     @Override
     public void setOriginY(float originY) {
-        float oldY = getOriginY();
         super.setOriginY(originY);
-        updateTransformation(getOriginX(), oldY, getRotation());
+        this.repeatablePolygonSprite.setOriginY(originY);
     }
 
     @Override
     public void setOrigin(float originX, float originY) {
-        float oldX = getOriginX();
-        float oldY = getOriginY();
         super.setOrigin(originX, originY);
-        updateTransformation(oldX, oldY, getRotation());
+        this.repeatablePolygonSprite.setOrigin(originX, originY);
     }
 
     @Override
     public void setRotation(float degrees) {
-        float oldDegrees = getRotation();
         super.setRotation(degrees);
-        updateTransformation(getOriginX(), getOriginY(), oldDegrees);
+        this.repeatablePolygonSprite.setRotation(degrees);
     }
 
-    public void updateTransformation(float oldOriginX, float oldOriginY, float oldDegrees) {
-        if (mesh != null) {
-            //translate to 0,0
-            this.transform = new Matrix4();
-            this.transform.translate(-oldOriginX, -oldOriginY, 0);
-            this.mesh.transform(this.transform);
-            // rotate to 0 Rotation
-            this.transform = new Matrix4();
-            this.transform.rotate(0, 0, 1, -oldDegrees);
-            this.mesh.transform(this.transform);
-            // rotate with new Rotation
-            this.transform = new Matrix4();
-            this.transform.rotate(0, 0, 1, getRotation());
-            this.mesh.transform(this.transform);
-            // translate back to Origin
-            this.transform = new Matrix4();
-            this.transform.translate(getOriginX(), getOriginY(), 0);
-            this.mesh.transform(this.transform);
+    @Override
+    public void setWidth(float width) {
+        return;
+    }
+
+    @Override
+    public void setColor(Color color) {
+        super.setColor(color);
+        if (repeatablePolygonSprite.getTextureRegion() == null || repeatablePolygonSprite.getTextureRegion().equals(whiteTextureRegion)) {
+            this.repeatablePolygonSprite.setColor(color);
         }
-        if (type == CIRCLE) {
-            Circle circle = (Circle) getShape();
-            circle.x = getOriginX();
-            circle.y = getOriginY();
-        } else if (type == RECTANGLE) {
-            Rectangle rect = (Rectangle) getShape();
-            rect.setCenter(getOriginX(), getOriginY());
-        } else if (type == POLYGON) {
-            Polygon polygon = (Polygon) getShape();
-            polygon.setOrigin(getOriginX(), getOriginY());
+    }
+
+    @Override
+    public void setColor(float r, float g, float b, float a) {
+        super.setColor(r, g, b, a);
+        if (repeatablePolygonSprite.getTextureRegion() == null || repeatablePolygonSprite.getTextureRegion().equals(whiteTextureRegion)) {
+            this.repeatablePolygonSprite.setColor(getColor());
         }
-        updateBounds();
+
+    }
+
+    @Override
+    public void setHeight(float height) {
+        return;
+    }
+
+    @Override
+    public void setSize(float width, float height) {
+        return;
+    }
+
+    @Override
+    public void setBounds(float x, float y, float width, float height) {
+        return;
+    }
+
+    @Override
+    public void setOrigin(int alignment) {
+        return;
+    }
+
+    @Override
+    public void setScaleX(float scaleX) {
+        super.setScaleX(scaleX);
+        this.repeatablePolygonSprite.setScaleX(scaleX);
+    }
+
+    @Override
+    public void setScaleY(float scaleY) {
+        super.setScaleY(scaleY);
+        this.repeatablePolygonSprite.setScaleY(scaleY);
+    }
+
+    @Override
+    public void setScale(float scaleXY) {
+        super.setScale(scaleXY);
+        this.repeatablePolygonSprite.setScale(scaleXY, scaleXY);
+    }
+
+    @Override
+    public void setScale(float scaleX, float scaleY) {
+        super.setScale(scaleX, scaleY);
+        this.repeatablePolygonSprite.setScale(scaleX, scaleY);
+    }
+
+    @Override
+    public void sizeBy(float size) {
+        return;
+    }
+
+    @Override
+    public void sizeBy(float width, float height) {
+        return;
+    }
+
+    @Override
+    public void scaleBy(float scale) {
+        super.scaleBy(scale);
+        this.repeatablePolygonSprite.scaleBy(scale);
+    }
+
+    @Override
+    public void scaleBy(float scaleX, float scaleY) {
+        super.scaleBy(scaleX, scaleY);
+        this.repeatablePolygonSprite.scaleBy(scaleX, scaleY);
+    }
+
+    @Override
+    public void rotateBy(float amountInDegrees) {
+        super.rotateBy(amountInDegrees);
+        this.repeatablePolygonSprite.rotateBy(amountInDegrees);
     }
 
     public Shape2D getShape() {
         return this.shape;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public RepeatablePolygonSprite getRepeatablePolygonSprite() {
+        return this.repeatablePolygonSprite;
+    }
+
+    public Rectangle getBoundingRectangle() {
+        return this.repeatablePolygonSprite.getBoundingRectangle();
     }
 }
