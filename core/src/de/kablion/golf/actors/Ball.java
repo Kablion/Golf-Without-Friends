@@ -20,13 +20,13 @@ public class Ball extends ShapeActor {
 
     private World world;
 
-    private Vector3 velocity;
-    private Vector3 positionBeforeShot;
+    private Vector3 velocity = new Vector3();
+    private Vector3 positionBeforeShot = new Vector3();
 
-    private boolean isInHole;
-    private boolean isOffGround;
+    private boolean isInHole = false;
+    private boolean isOffGround = false;
 
-    private int stroke;
+    private int stroke = 0;
 
     public Ball(float x, float y, float radius, World world) {
         super();
@@ -34,11 +34,6 @@ public class Ball extends ShapeActor {
         setOrigin(x, y);
         setColor(Color.WHITE);
         setShape(new Circle(x, y, radius));
-        this.velocity = new Vector3();
-        this.positionBeforeShot = new Vector3();
-        this.isOffGround = false;
-        this.isInHole = false;
-        this.stroke = 0;
     }
 
     public void update(float delta) {

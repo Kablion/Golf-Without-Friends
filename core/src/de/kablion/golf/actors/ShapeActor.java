@@ -30,6 +30,8 @@ import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 
+import org.w3c.dom.css.Rect;
+
 import de.kablion.golf.data.CollisionData;
 import de.kablion.golf.utils.RepeatablePolygonSprite;
 
@@ -42,7 +44,7 @@ public class ShapeActor extends Actor {
 
     private Shape2D shape;
     private RepeatablePolygonSprite repeatablePolygonSprite = new RepeatablePolygonSprite();
-    private int type;
+    private int type = NONE;
     private TextureRegion whiteTextureRegion;
 
     public ShapeActor(Shape2D shape, float positionX, float positionY) {
@@ -142,12 +144,15 @@ public class ShapeActor extends Actor {
     protected void drawDebugBounds(ShapeRenderer shapes) {
 
         if (!getDebug()) return;
-        /*shapes.set(ShapeRenderer.ShapeType.Line);
+        shapes.set(ShapeRenderer.ShapeType.Line);
         shapes.setColor(getStage().getDebugColor());
-        shapes.rect(getX(), getY(), getOriginX(), getOriginY(), getWidth(), getHeight(), getScaleX(), getScaleY(), 0);
+        Rectangle bounds = repeatablePolygonSprite.getBoundingRectangle();
+        shapes.rect(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
         // Cross on the Origin
-        shapes.line(getOriginX() - 1, getOriginY() - 1, getOriginX() + 1, getOriginY() + 1);
-        shapes.line(getOriginX() - 1, getOriginY() + 1, getOriginX() + 1, getOriginY() - 1);*/
+        float realX = getX() + getOriginX();
+        float realY = getY() + getOriginY();
+        shapes.line(realX - 1, realY - 1, realX + 1, realY + 1);
+        shapes.line(realX - 1, realY + 1, realX + 1, realY - 1);
 
         // draw grid and vertices in grid
         repeatablePolygonSprite.drawDebug(shapes, getStage().getDebugColor());
@@ -162,26 +167,6 @@ public class ShapeActor extends Actor {
         if (whiteTextureRegion != null) {
             whiteTextureRegion.getTexture().dispose();
         }
-    }
-
-    public void setTextureRegion(TextureRegion textureRegion) {
-        setTextureRegion(textureRegion, 0, 0, RepeatablePolygonSprite.WrapType.STRETCH, RepeatablePolygonSprite.WrapType.STRETCH);
-    }
-
-    public void setTextureRegion(TextureRegion textureRegion, float width, float height, int wrapTypeX, int wrapTypeY) {
-        if (textureRegion != null) {
-            this.repeatablePolygonSprite.setTextureRegion(textureRegion, width, height, wrapTypeX, wrapTypeY);
-            this.repeatablePolygonSprite.setColor(Color.WHITE);
-        } else {
-            this.repeatablePolygonSprite.setTextureRegion(whiteTextureRegion, width, height, wrapTypeX, wrapTypeY);
-            this.repeatablePolygonSprite.setColor(getColor());
-        }
-    }
-
-    public void setShape(Shape2D shape) {
-        this.shape = shape;
-        this.type = findShapeType(this.shape);
-        updateVertices();
     }
 
     private void updateVertices() {
@@ -202,20 +187,6 @@ public class ShapeActor extends Actor {
                     vertices[division * 2] = (float) Math.cos(radiansPerDivision * division) * circle.radius;
                     vertices[division * 2 + 1] = (float) Math.sin(radiansPerDivision * division) * circle.radius;
                 }
-
-                /*MeshBuilder meshBuilder = new MeshBuilder();
-                meshBuilder.begin(new VertexAttributes(new VertexAttribute(VertexAttributes.Usage.Position, 2, ShaderProgram.POSITION_ATTRIBUTE)));
-                MeshPart part1 = meshBuilder.part("part1", GL20.GL_TRIANGLES);
-                EllipseShapeBuilder.build(meshBuilder, circle.radius, divisions, 0, 0, 0, 0, 0, 1);
-
-                Mesh mesh = meshBuilder.end();
-                vertices = new float[mesh.getNumVertices()*2];
-                mesh.getVertices(vertices);
-
-                // remove first (center)
-                float[] tempVerts = new float[vertices.length - 2];
-                System.arraycopy(vertices,2,tempVerts,0,vertices.length-2);
-                vertices = tempVerts;*/
 
             } else if (type == RECTANGLE) {  ////////////////////////////////// Rectangle
                 Rectangle rect = ((Rectangle) this.shape);
@@ -320,10 +291,11 @@ public class ShapeActor extends Actor {
         Vector2 polygonOrigin = new Vector2();
         rect.getCenter(polygonOrigin);
 
+        float[] vertices = second.getRepeatablePolygonSprite().getTransformedVertices();
+        /*float[] vertices = new float[8];
+
         float halfWidth = rect.getWidth() / 2;
         float halfHeight = rect.getHeight() / 2;
-
-        float[] vertices = new float[8];
         // bottom left
         vertices[0] = -halfWidth;
         vertices[1] = -halfHeight;
@@ -338,11 +310,11 @@ public class ShapeActor extends Actor {
 
         // bottom right
         vertices[6] = +halfWidth;
-        vertices[7] = -halfHeight;
+        vertices[7] = -halfHeight;*/
 
         Vector2 circlePosition = new Vector2(circle.x, circle.y);
 
-        return checkCollisionCirclePolygon(vertices, polygonOrigin, second.getRotation(), circlePosition, circle.radius);
+        return checkCollisionCirclePolygon(vertices, circlePosition, circle.radius);
     }
 
     public static CollisionData checkCollisionCirclePolygon(ShapeActor main, ShapeActor second) {
@@ -355,59 +327,63 @@ public class ShapeActor extends Actor {
         Circle circle = (Circle) main.getShape();
 
         Polygon polygon = (Polygon) second.getShape();
-        float[] vertices = polygon.getVertices();
+        float[] vertices = second.getRepeatablePolygonSprite().getTransformedVertices();
         Vector2 polygonOrigin = new Vector2(polygon.getOriginX(), polygon.getOriginY());
         Vector2 circlePosition = new Vector2(circle.x, circle.y);
 
-        return checkCollisionCirclePolygon(vertices, polygonOrigin, second.getRotation(), circlePosition, circle.radius);
+        return checkCollisionCirclePolygon(vertices, circlePosition, circle.radius);
     }
 
+    /**
+     * @param polygonVertices world Vertices of the polygon
+     */
     @SuppressWarnings("SuspiciousNameCombination")
-    public static CollisionData checkCollisionCirclePolygon(float[] vertices, Vector2 polygonOrigin, float rotation, Vector2 circlePosition, float circleRadius) {
+    public static CollisionData checkCollisionCirclePolygon(float[] polygonVertices, Vector2 circlePosition, float circleRadius) {
         CollisionData collisionData = null;
         Vector2 normal = new Vector2();
 
         int iMinOlap = 0;
         float minOverLap = 1000000;
 
-        Vector2 circlePFromPOrigin = new Vector2(circlePosition.x - polygonOrigin.x, circlePosition.y - polygonOrigin.y);
+        //Vector2 circlePFromPOrigin = new Vector2(circlePosition.x - polygonOrigin.x, circlePosition.y - polygonOrigin.y);
 
-        if (rotation != 0) {
+        /*if (rotation != 0) {
             circlePFromPOrigin.rotate(-rotation);
-        }
+        }*/
 
         Vector2 edgeNormal = new Vector2();
 
-        for (int i = 0; i < vertices.length; i += 2) {
+        for (int i = 0; i < polygonVertices.length; i += 2) {
             // Loop through every edge of the Polygon
 
-            if (i == -1) {
+            /*if (i == -1) {
                 // First Projection along the vector from anker to ballCenter
                 edgeNormal.set(circlePFromPOrigin);
-            } else if (i + 2 == vertices.length) {
+            } else*/
+            if (i + 2 == polygonVertices.length) {
                 // Edge from last to first Vertex
-                edgeNormal.set(vertices[0] - vertices[i], vertices[1] - vertices[i + 1]);
+                edgeNormal.set(polygonVertices[0] - polygonVertices[i], polygonVertices[1] - polygonVertices[i + 1]);
                 // set to left normal
                 edgeNormal.rotate90(1);
             } else {
                 // edge from current to next Vertex
-                edgeNormal.set(vertices[i + 2] - vertices[i], vertices[i + 3] - vertices[i + 1]);
+                edgeNormal.set(polygonVertices[i + 2] - polygonVertices[i], polygonVertices[i + 3] - polygonVertices[i + 1]);
                 // set to left normal
                 edgeNormal.rotate90(1);
             }
             edgeNormal.setLength(1);
 
             //setting min max for the polygon on the edgeNormal
-            float polygonMin = Vector2.dot(vertices[0], vertices[1], edgeNormal.x, edgeNormal.y);
-            float polygonMax = Vector2.dot(vertices[0], vertices[1], edgeNormal.x, edgeNormal.y);
+            float polygonMin = Vector2.dot(polygonVertices[0], polygonVertices[1], edgeNormal.x, edgeNormal.y);
+            float polygonMax = Vector2.dot(polygonVertices[0], polygonVertices[1], edgeNormal.x, edgeNormal.y);
 
-            float projectedCircleCenter = Vector2.dot(circlePFromPOrigin.x, circlePFromPOrigin.y, edgeNormal.x, edgeNormal.y);
+            float projectedCircleCenter = Vector2.dot(circlePosition.x, circlePosition.y, edgeNormal.x, edgeNormal.y);
             float circleMin = projectedCircleCenter - circleRadius;
             float circleMax = projectedCircleCenter + circleRadius;
 
-            for (int j = 2; j < vertices.length; j += 2) {
+            for (int j = 2; j < polygonVertices.length; j += 2) {
                 // Loop to get Min and Max Vertices
-                float currentProjection = Vector2.dot(vertices[j], vertices[j + 1], edgeNormal.x, edgeNormal.y);
+                float currentProjection = Vector2.dot(polygonVertices[j], polygonVertices[j + 1], edgeNormal.x, edgeNormal.y);
 
                 if (currentProjection > polygonMax) {
                     polygonMax = currentProjection;
@@ -432,8 +408,8 @@ public class ShapeActor extends Actor {
                     minOverLap = overlapDistance;
                     iMinOlap = i;
                 } else if (overlapDistance == minOverLap) {
-                    float projectedOld = Vector2.dot(vertices[iMinOlap], vertices[iMinOlap + 1], edgeNormal.x, edgeNormal.y);
-                    float projectedNew = Vector2.dot(vertices[i], vertices[i + 1], edgeNormal.x, edgeNormal.y);
+                    float projectedOld = Vector2.dot(polygonVertices[iMinOlap], polygonVertices[iMinOlap + 1], edgeNormal.x, edgeNormal.y);
+                    float projectedNew = Vector2.dot(polygonVertices[i], polygonVertices[i + 1], edgeNormal.x, edgeNormal.y);
                     if (Math.abs(projectedOld - projectedCircleCenter) > Math.abs(projectedNew - projectedCircleCenter)) {
                         // Distance Edge to ball
                         // the new Edge is closer
@@ -448,47 +424,47 @@ public class ShapeActor extends Actor {
         }
 
 
-        if (iMinOlap + 2 == vertices.length) {
+        if (iMinOlap + 2 == polygonVertices.length) {
 
-            Vector2 projectOn = new Vector2(vertices[0] - vertices[iMinOlap], vertices[1] - vertices[iMinOlap + 1]);
+            Vector2 projectOn = new Vector2(polygonVertices[0] - polygonVertices[iMinOlap], polygonVertices[1] - polygonVertices[iMinOlap + 1]);
             projectOn.setLength(1);
-            float projectedMin = Vector2.dot(vertices[iMinOlap], vertices[iMinOlap + 1], projectOn.x, projectOn.y);
-            float projectedMax = Vector2.dot(vertices[0], vertices[1], projectOn.x, projectOn.y);
-            float projectedCircle = Vector2.dot(circlePFromPOrigin.x, circlePFromPOrigin.y, projectOn.x, projectOn.y);
+            float projectedMin = Vector2.dot(polygonVertices[iMinOlap], polygonVertices[iMinOlap + 1], projectOn.x, projectOn.y);
+            float projectedMax = Vector2.dot(polygonVertices[0], polygonVertices[1], projectOn.x, projectOn.y);
+            float projectedCircle = Vector2.dot(circlePosition.x, circlePosition.y, projectOn.x, projectOn.y);
             if (projectedCircle < projectedMin) {
                 // Corner
-                normal.set(circlePFromPOrigin.x - vertices[iMinOlap], circlePFromPOrigin.y - vertices[iMinOlap + 1]);
+                normal.set(circlePosition.x - polygonVertices[iMinOlap], circlePosition.y - polygonVertices[iMinOlap + 1]);
 
             } else if (projectedCircle > projectedMax) {
                 // Corner
-                normal.set(circlePFromPOrigin.x - vertices[0], circlePFromPOrigin.y - vertices[1]);
+                normal.set(circlePosition.x - polygonVertices[0], circlePosition.y - polygonVertices[1]);
                 iMinOlap = 0;
 
             } else {
                 // Edge
-                normal.set(vertices[0] - vertices[iMinOlap], vertices[1] - vertices[iMinOlap + 1]);
+                normal.set(polygonVertices[0] - polygonVertices[iMinOlap], polygonVertices[1] - polygonVertices[iMinOlap + 1]);
                 // left normal
                 normal.rotate90(1);
             }
         } else {
-            Vector2 projectOn = new Vector2(vertices[iMinOlap + 2] - vertices[iMinOlap], vertices[iMinOlap + 3] - vertices[iMinOlap + 1]);
+            Vector2 projectOn = new Vector2(polygonVertices[iMinOlap + 2] - polygonVertices[iMinOlap], polygonVertices[iMinOlap + 3] - polygonVertices[iMinOlap + 1]);
             projectOn.setLength(1);
-            float projectedMin = Vector2.dot(vertices[iMinOlap], vertices[iMinOlap + 1], projectOn.x, projectOn.y);
-            float projectedMax = Vector2.dot(vertices[iMinOlap + 2], vertices[iMinOlap + 3], projectOn.x, projectOn.y);
-            float projectedCircle = Vector2.dot(circlePFromPOrigin.x, circlePFromPOrigin.y, projectOn.x, projectOn.y);
+            float projectedMin = Vector2.dot(polygonVertices[iMinOlap], polygonVertices[iMinOlap + 1], projectOn.x, projectOn.y);
+            float projectedMax = Vector2.dot(polygonVertices[iMinOlap + 2], polygonVertices[iMinOlap + 3], projectOn.x, projectOn.y);
+            float projectedCircle = Vector2.dot(circlePosition.x, circlePosition.y, projectOn.x, projectOn.y);
 
             if (projectedCircle < projectedMin) {
                 // Corner
-                normal.set(circlePFromPOrigin.x - vertices[iMinOlap], circlePFromPOrigin.y - vertices[iMinOlap + 1]);
+                normal.set(circlePosition.x - polygonVertices[iMinOlap], circlePosition.y - polygonVertices[iMinOlap + 1]);
 
             } else if (projectedCircle > projectedMax) {
                 // Corner
-                normal.set(circlePFromPOrigin.x - vertices[iMinOlap + 2], circlePFromPOrigin.y - vertices[iMinOlap + 3]);
+                normal.set(circlePosition.x - polygonVertices[iMinOlap + 2], circlePosition.y - polygonVertices[iMinOlap + 3]);
                 iMinOlap++;
 
             } else {
                 // Edge
-                normal.set(vertices[iMinOlap + 2] - vertices[iMinOlap], vertices[iMinOlap + 3] - vertices[iMinOlap + 1]);
+                normal.set(polygonVertices[iMinOlap + 2] - polygonVertices[iMinOlap], polygonVertices[iMinOlap + 3] - polygonVertices[iMinOlap + 1]);
                 // left normal
                 normal.rotate90(1);
                 //normal.set(normal.y,-normal.x);
@@ -496,15 +472,39 @@ public class ShapeActor extends Actor {
         }
         normal.setLength(1);
 
-        if (rotation != 0) {
+        /*if (rotation != 0) {
             normal.rotate(rotation);
-        }
+        }*/
 
         collisionData = new CollisionData();
         collisionData.normalVector = normal;
         collisionData.overlapDistance = minOverLap;
 
         return collisionData;
+    }
+
+    public void setTextureRegion(TextureRegion textureRegion) {
+        setTextureRegion(textureRegion, 0, 0, RepeatablePolygonSprite.WrapType.STRETCH, RepeatablePolygonSprite.WrapType.STRETCH);
+    }
+
+    public void setTextureRegion(TextureRegion textureRegion, float width, float height, int wrapTypeX, int wrapTypeY) {
+        if (textureRegion != null) {
+            this.repeatablePolygonSprite.setTextureRegion(textureRegion, width, height, wrapTypeX, wrapTypeY);
+            this.repeatablePolygonSprite.setColor(Color.WHITE);
+        } else {
+            this.repeatablePolygonSprite.setTextureRegion(whiteTextureRegion, width, height, wrapTypeX, wrapTypeY);
+            this.repeatablePolygonSprite.setColor(getColor());
+        }
+    }
+
+    public void setTextureOffset(float textureOffsetX, float textureOffsetY) {
+        this.repeatablePolygonSprite.setTextureOffset(textureOffsetX, textureOffsetY);
+    }
+
+    public void setShape(Shape2D shape) {
+        this.shape = shape;
+        this.type = findShapeType(this.shape);
+        updateVertices();
     }
 
     @Override
@@ -646,6 +646,26 @@ public class ShapeActor extends Actor {
     public void rotateBy(float amountInDegrees) {
         super.rotateBy(amountInDegrees);
         this.repeatablePolygonSprite.rotateBy(amountInDegrees);
+    }
+
+    @Override
+    public float getWidth() {
+        return getBoundingRectangle().getWidth();
+    }
+
+    @Override
+    public float getHeight() {
+        return getBoundingRectangle().getHeight();
+    }
+
+    @Override
+    public float getTop() {
+        return getBoundingRectangle().getY() + getBoundingRectangle().getHeight();
+    }
+
+    @Override
+    public float getRight() {
+        return getBoundingRectangle().getX() + getBoundingRectangle().getWidth();
     }
 
     public Shape2D getShape() {

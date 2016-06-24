@@ -12,13 +12,8 @@ public class BallData {
 
     public static final float DEFAULT_RADIUS = 5;
 
-    public Vector3 startingPosition;
-    public float radius;
-
-    public BallData() {
-        startingPosition = new Vector3();
-        radius = DEFAULT_RADIUS;
-    }
+    public Vector3 startingPosition = new Vector3();
+    public float radius = DEFAULT_RADIUS;
 
     public Ball toActor(AssetManager assetManager, World world) {
         return new Ball(startingPosition.x, startingPosition.y, radius, world);

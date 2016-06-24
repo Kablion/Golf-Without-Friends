@@ -20,26 +20,15 @@ public class MapData {
     public static final int DEFAULT_PAR = 2;
     public static final float DEFAULT_MAX_SHOOT_SPEED = 50;
 
-    public int par;
-    public float maxShootSpeed;
+    public int par = DEFAULT_PAR;
+    public float maxShootSpeed = DEFAULT_MAX_SHOOT_SPEED;
 
-    public BallData ballData;
-    public CameraData cameraData;
+    public BallData ballData = new BallData();
+    public CameraData cameraData = new CameraData();
 
-    public Array<WallData> wallDatas;
-    public Array<GroundData> groundDatas;
-    public Array<HoleData> holeDatas;
-
-    public MapData(){
-        par = DEFAULT_PAR;
-        maxShootSpeed = DEFAULT_MAX_SHOOT_SPEED;
-
-        ballData = new BallData();
-        cameraData = new CameraData();
-        wallDatas = new Array<WallData>();
-        groundDatas = new Array<GroundData>();
-        holeDatas = new Array<HoleData>();
-    }
+    public Array<WallData> wallDatas = new Array<WallData>();
+    public Array<GroundData> groundDatas = new Array<GroundData>();
+    public Array<HoleData> holeDatas = new Array<HoleData>();
 
     public static MapData loadMap(String path) {
         MapData mapData = null;
@@ -71,7 +60,7 @@ public class MapData {
         tempWallData.startingPosition.set(0, -50);
         tempWallData.length = 50;
         tempWallData.width = 10;
-        tempWallData.rotation = 0;
+        tempWallData.rotation = 30;
         mapData.wallDatas.add(tempWallData);
 
         // create Grounds
@@ -82,6 +71,7 @@ public class MapData {
         //tempGroundData.polygonPoints.add(new Vector2(-70, 100));
         tempGroundData.polygonPoints.add(new Vector2(70, 100));
         //tempGroundData.polygonPoints.add(new Vector2(70,-100));
+        tempGroundData.textureOffset.set(70, 100);
         mapData.groundDatas.add(tempGroundData);
 
         // create holes

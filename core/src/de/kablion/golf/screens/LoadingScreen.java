@@ -30,14 +30,13 @@ public class LoadingScreen implements Screen {
     private final Application app;
 
     private Stage stage;
-    private Table rootTable;
+    private Table rootTable = new Table();
     private ProgressBar progressBar;
     private Skin skin;
 
     public LoadingScreen(final Application app) {
         this.app = app;
         this.stage = new Stage(new ExtendViewport(UI_WIDTH,UI_HEIGHT),app.batch);
-        rootTable = new Table();
         this.skin = new Skin(Gdx.files.internal("skins/loadingScreen.json"));
         skin.addRegions(new TextureAtlas("skins/loadingScreen.atlas"));
     }

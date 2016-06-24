@@ -39,12 +39,12 @@ public class HUDStage extends Stage {
 
     private Application app;
     private WorldStage worldStage;
-    private Skin hudSkin;
-    private Skin skin;
+    private Skin hudSkin = new Skin();
+    private Skin skin = new Skin();
 
-    private Table rootTable;
-    private Table shootBar;
-    private Table buttons;
+    private Table rootTable = new Table();
+    private Table shootBar = new Table();
+    private Table buttons = new Table();
 
     private Image cameraOverlay;
     private Label strokeLabel;
@@ -54,7 +54,7 @@ public class HUDStage extends Stage {
     private ImageButton backButton;
     private Slider powerBar;
 
-    private Vector3 shootVelocity;
+    private Vector3 shootVelocity = new Vector3();
     // FPS which is currently shown
     private float fpsCurrent;
     // When the fpsShown was last updated
@@ -66,9 +66,6 @@ public class HUDStage extends Stage {
         super(new ExtendViewport(UI_WIDTH,UI_HEIGHT),application.batch);
         this.app = application;
         this.worldStage = stage;
-        this.hudSkin = new Skin();
-        this.skin = new Skin();
-        this.shootVelocity = new Vector3();
 
 
     }
@@ -93,13 +90,13 @@ public class HUDStage extends Stage {
 
     private void initRoot() {
         clear();
-        rootTable = new Table();
+        rootTable.clear();
         rootTable.setFillParent(true);
         addActor(rootTable);
     }
 
     private void initShootBar() {
-        shootBar = new Table();
+        shootBar.clear();
         powerBar = new Slider(0.001f, 1, 0.001f, false, skin);
         powerBar.addListener(new ChangeListener() {
             @Override
@@ -137,7 +134,7 @@ public class HUDStage extends Stage {
     }
 
     private void initButtons() {
-        buttons = new Table();
+        buttons.clear();
         Table leftButtons = new Table();
         leftButtons.align(Align.left);
         buttons.add(leftButtons).expand().fill().left();

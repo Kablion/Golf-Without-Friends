@@ -17,15 +17,11 @@ public class CameraHandler implements GestureDetector.GestureListener, InputProc
 
     private WorldStage worldStage;
 
-    private float initialZoom;
-    private float initialRotation;
-    private float rotation;
+    private float initialZoom = 0;
+    private float initialRotation = 0;
 
     public CameraHandler(WorldStage stage) {
         this.worldStage = stage;
-        initialZoom = 0;
-        initialRotation = 0;
-        rotation = 0;
     }
 
     public void update(float deltatime) {

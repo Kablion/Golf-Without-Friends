@@ -30,8 +30,8 @@ public class MainMenuScreen implements Screen {
     private final Application app;
     private Stage stage;
     private Skin skin;
-    private Table rootTable;
-    private Table menuTable;
+    private Table rootTable = new Table();
+    private Table menuTable = new Table();
     private Label labelTitle;
 
     // Menu Buttons
@@ -47,8 +47,8 @@ public class MainMenuScreen implements Screen {
     @Override
     public void show() {
         stage.clear();
-        rootTable = new Table();
-        menuTable = new Table();
+        rootTable.clear();
+        menuTable.clear();
 
         System.out.println("MAIN MENU");
         Gdx.input.setInputProcessor(stage);

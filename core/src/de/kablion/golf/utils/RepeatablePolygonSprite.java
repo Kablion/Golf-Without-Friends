@@ -3,10 +3,10 @@ package de.kablion.golf.utils;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g3d.environment.AmbientCubemap;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.EarClippingTriangulator;
 import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -19,10 +19,6 @@ import com.badlogic.gdx.utils.ShortArray;
  *
  * @author Avetis Zakharyan (concept and first version)
  * @author Kablion (rewrite)
- *         <p/>
- *         todo:
- *         rotation
- *         scale
  */
 public class RepeatablePolygonSprite {
 
@@ -39,35 +35,33 @@ public class RepeatablePolygonSprite {
     private float textureWidth = 0;
     private float textureHeight = 0;
 
+    private float textureDebugX = 0;
+    private float textureDebugY = 0;
+
     private boolean dirtyGrid = true;
     private boolean dirtyAttributes = true;
-
-    private float[] originalVertices = null;
 
     private Array<float[]> parts = new Array<float[]>();
 
     private Array<float[]> vertices = new Array<float[]>();
     private Array<short[]> indices = new Array<short[]>();
 
-    private int cols, rows;
+    private int rows;
     private Vector2 gridOffset = new Vector2();
     private float gridWidth, gridHeight;
     private Vector2 buildOffset = new Vector2();
 
-    private float x = 0, y = 0;
-    private float originX = 0, originY = 0;
-    private float scaleX = 1f, scaleY = 1f;
-    private float rotation = 0;
-    private Rectangle bounds = new Rectangle();
+    private Polygon polygon = new Polygon();
+    private Rectangle boundingRect = new Rectangle();
 
     /**
      * calculates the grid and the parts in relation to the texture Origin
      */
     private void prepareVertices() {
         parts.clear();
-        if (originalVertices == null) return;
+        if (polygon.getVertices().length == 0) return;
         if (textureRegion == null) return;
-        float[] vertices = originalVertices.clone();
+        float[] vertices = polygon.getVertices().clone();
 
         Polygon polygon = new Polygon(vertices);
         Polygon tmpPoly = new Polygon();
@@ -76,28 +70,28 @@ public class RepeatablePolygonSprite {
 
         int idx;
 
-        Rectangle boundRect = polygon.getBoundingRectangle();
+        Rectangle bounds = polygon.getBoundingRectangle();
 
 
         if (wrapTypeX == WrapType.STRETCH) {
-            gridWidth = boundRect.getWidth();
+            gridWidth = bounds.getWidth();
         } else {
             gridWidth = textureWidth;
         }
         if (wrapTypeY == WrapType.STRETCH) {
-            gridHeight = boundRect.getHeight();
+            gridHeight = bounds.getHeight();
         } else {
             gridHeight = textureHeight;
         }
 
         polygon.setVertices(offset(vertices));
 
-        boundRect = polygon.getBoundingRectangle();
+        bounds = polygon.getBoundingRectangle();
 
-        cols = (int) (Math.ceil(boundRect.getWidth() / gridWidth));
-        if (boundRect.getX() + boundRect.getWidth() > (cols + gridOffset.x) * gridWidth) cols++;
-        rows = (int) Math.ceil(boundRect.getHeight() / gridHeight);
-        if (boundRect.getY() + boundRect.getHeight() > (rows + gridOffset.y) * gridHeight) rows++;
+        int cols = (int) (Math.ceil(bounds.getWidth() / gridWidth));
+        if (bounds.getX() + bounds.getWidth() > (cols + gridOffset.x) * gridWidth) cols++;
+        rows = (int) Math.ceil(bounds.getHeight() / gridHeight);
+        if (bounds.getY() + bounds.getHeight() > (rows + gridOffset.y) * gridHeight) rows++;
 
         for (int col = 0; col < cols; col++) {
             for (int row = 0; row < rows; row++) {
@@ -143,7 +137,7 @@ public class RepeatablePolygonSprite {
     private void buildVertices() {
         vertices.clear();
         if (textureRegion == null) return;
-        if (originalVertices == null) return;
+        if (polygon.getVertices().length == 0) return;
         for (int i = 0; i < parts.size; i++) {
             float verts[] = parts.get(i);
             if (verts == null) continue;
@@ -157,8 +151,19 @@ public class RepeatablePolygonSprite {
             int offsettedRow = row + (int) gridOffset.y;
 
             for (int j = 0; j < verts.length; j += 2) {
-                fullVerts[idx++] = verts[j] + buildOffset.x + textureOffset.x + x + originX;
-                fullVerts[idx++] = verts[j + 1] + buildOffset.y + textureOffset.y + y + originY;
+                float x = (verts[j] + buildOffset.x + textureOffset.x) * getScaleX();
+                float y = (verts[j + 1] + buildOffset.y + textureOffset.y) * getScaleY();
+                if (getRotation() != 0) {
+                    float tempX = x;
+                    float tempY = y;
+                    float rotationInRads = getRotation() * MathUtils.degreesToRadians;
+                    x = tempX * (float) Math.cos(rotationInRads) - tempY * (float) Math.sin(rotationInRads);
+                    y = tempY * (float) Math.cos(rotationInRads) + tempX * (float) Math.sin(rotationInRads);
+                }
+                x += getX() + getOriginX();
+                y += getY() + getOriginY();
+                fullVerts[idx++] = x;
+                fullVerts[idx++] = y;
 
                 fullVerts[idx++] = color.toFloatBits();
 
@@ -181,6 +186,21 @@ public class RepeatablePolygonSprite {
             }
             vertices.add(fullVerts);
         }
+
+        this.textureDebugX = (buildOffset.x + textureOffset.x) * getScaleX();
+        this.textureDebugY = (buildOffset.y + textureOffset.y) * getScaleY();
+        if (getRotation() != 0) {
+            float tempX = this.textureDebugX;
+            float tempY = this.textureDebugY;
+            float rotationInRads = getRotation() * MathUtils.degreesToRadians;
+            this.textureDebugX = tempX * (float) Math.cos(rotationInRads) - tempY * (float) Math.sin(rotationInRads);
+            this.textureDebugY = tempY * (float) Math.cos(rotationInRads) + tempX * (float) Math.sin(rotationInRads);
+        }
+        this.textureDebugX += getX() + getOriginX();
+        this.textureDebugY += getY() + getOriginY();
+
+        this.boundingRect = polygon.getBoundingRectangle();
+
         dirtyAttributes = false;
     }
 
@@ -221,8 +241,11 @@ public class RepeatablePolygonSprite {
     private float[] offset(float[] vertices) {
         float[] result = vertices.clone();
 
-        buildOffset.x = bounds.x - x - originX;
-        buildOffset.y = bounds.y - y - originY;
+        Polygon polygon = new Polygon(result);
+        Rectangle bounds = polygon.getBoundingRectangle();
+
+        buildOffset.x = bounds.x;
+        buildOffset.y = bounds.y;
 
         for (int i = 0; i < result.length; i += 2) {
             result[i] -= (buildOffset.x + textureOffset.x);
@@ -272,27 +295,14 @@ public class RepeatablePolygonSprite {
                 float y3 = curVerts[curIndices[j + 2] * 5 + 1];
                 shapes.triangle(x1, y1, x2, y2, x3, y3);
             }
-
-
-            int col = i / rows;
-            int row = i % rows;
-            int offsettedCol = col + (int) gridOffset.x;
-            int offsettedRow = row + (int) gridOffset.y;
-
-            // draw grid
-            float cellX = offsettedCol * gridWidth + buildOffset.x + textureOffset.x + x + originX;
-            float cellY = offsettedRow * gridHeight + buildOffset.y + textureOffset.y + y + originY;
-            shapes.set(ShapeRenderer.ShapeType.Line);
-            shapes.setColor(Color.BLACK);
-            shapes.rect(cellX, cellY, gridWidth, gridHeight);
-
-            //draw cross on grid 0/0
-            shapes.setColor(Color.RED);
-            shapes.line(buildOffset.x + textureOffset.x + x + originX - 2, buildOffset.y + textureOffset.y + y + originY - 2,
-                    buildOffset.x + textureOffset.x + x + originX + 2, buildOffset.y + textureOffset.y + y + originY + 2);
-            shapes.line(buildOffset.x + textureOffset.x + x + originX - 2, buildOffset.y + textureOffset.y + y + originY + 2,
-                    buildOffset.x + textureOffset.x + x + originX + 2, buildOffset.y + textureOffset.y + y + originY - 2);
         }
+
+        //draw cross on grid 0/0
+        shapes.setColor(Color.RED);
+        shapes.line(textureDebugX - 1, textureDebugY - 1,
+                textureDebugX + 1, textureDebugY + 1);
+        shapes.line(textureDebugX - 1, textureDebugY + 1,
+                textureDebugX + 1, textureDebugY - 1);
     }
 
     /**
@@ -301,12 +311,15 @@ public class RepeatablePolygonSprite {
      * @param vertices - vertices of polygon relative to the origin
      */
     public void setVertices(float[] vertices) {
-        this.originalVertices = vertices;
-
-        if (vertices != null) {
-            Polygon polygon = new Polygon(vertices);
-            polygon.translate(x + originX, y + originY);
-            this.bounds = polygon.getBoundingRectangle();
+        if (vertices == null) {
+            Polygon tempPolygon = new Polygon();
+            tempPolygon.setPosition(getX(), getY());
+            tempPolygon.setOrigin(getOriginX(), getOriginY());
+            tempPolygon.setRotation(getRotation());
+            tempPolygon.setScale(getScaleX(), getScaleY());
+            polygon = tempPolygon;
+        } else {
+            polygon.setVertices(vertices);
         }
         dirtyGrid = true;
     }
@@ -381,8 +394,7 @@ public class RepeatablePolygonSprite {
 
     /** Sets the sprite's position in the world */
     public void setPosition(float x, float y) {
-        this.x = x;
-        this.y = y;
+        polygon.setPosition(x,y);
         dirtyAttributes = true;
     }
 
@@ -390,101 +402,78 @@ public class RepeatablePolygonSprite {
      * Sets the sprite's x position in the world
      */
     public void setX(float x) {
-        this.x = x;
+        polygon.setPosition(x,getY());
         dirtyAttributes = true;
     }
 
-    /**
-     * Sets the sprite's y position in the world
-     */
+    /** Sets the sprite's y position in the world */
     public void setY(float y) {
-        this.y = y;
+        polygon.setPosition(getX(),y);
         dirtyAttributes = true;
     }
 
-    /**
-     * Sets the sprite's position in the world
-     */
+    /** Sets the sprite's position in the world */
     public void translate(float x, float y) {
-        this.x += x;
-        this.y += y;
+        polygon.setPosition(getX() +x,getY()+y);
         dirtyAttributes = true;
     }
 
     /** Sets the origin in relation to the sprite's position for scaling and rotation. */
     public void setOrigin(float x, float y) {
-        this.originX = x;
-        this.originY = y;
+        polygon.setOrigin(x,y);
         dirtyAttributes = true;
     }
 
-    /**
-     * Sets the origin x in relation to the sprite's position for scaling and rotation.
-     */
+    /** Sets the origin x in relation to the sprite's position for scaling and rotation. */
     public void setOriginX(float x) {
-        this.originX = x;
+        setOrigin(x, getOriginY());
         dirtyAttributes = true;
     }
 
-    /**
-     * Sets the origin y in relation to the sprite's position for scaling and rotation.
-     */
+    /** Sets the origin y in relation to the sprite's position for scaling and rotation. */
     public void setOriginY(float y) {
-        this.originY = y;
+        setOrigin(getOriginX(),y);
         dirtyAttributes = true;
     }
 
     /** Sets the scale along both axises where 1 = normal Size */
     public void setScale(float scaleX, float scaleY) {
-        this.scaleX = scaleX;
-        this.scaleY = scaleY;
+        polygon.setScale(scaleX,scaleY);
         dirtyAttributes = true;
     }
 
-    /**
-     * Sets the scale along the x axis where 1 = normal Size
-     */
+    /** Sets the scale along the x axis where 1 = normal Size */
     public void setScaleX(float scaleX) {
-        this.scaleX = scaleX;
+        polygon.setScale(scaleX, getScaleY());
         dirtyAttributes = true;
     }
 
-    /**
-     * Sets the scale along the y axis where 1 = normal Size
-     */
+    /** Sets the scale along the y axis where 1 = normal Size */
     public void setScaleY(float scaleY) {
-        this.scaleY = scaleY;
+        polygon.setScale(getScaleX(),scaleY);
         dirtyAttributes = true;
     }
 
-    /**
-     * Adds the specified scale to the current scale.
-     */
+    /** Adds the specified scale to the current scale. */
     public void scaleBy(float scaleXY) {
-        this.scaleX += scaleXY;
-        this.scaleY += scaleXY;
+        polygon.scale(scaleXY);
         dirtyAttributes = true;
     }
 
-    /**
-     * Adds the specified scale to the current scale.
-     */
+    /** Adds the specified scale to the current scale. */
     public void scaleBy(float scaleX, float scaleY) {
-        this.scaleX += scaleX;
-        this.scaleY += scaleY;
+        polygon.setScale(getScaleX() + scaleX, getScaleY()+scaleY);
         dirtyAttributes = true;
     }
 
-    public void setRotation(float degree) {
-        this.rotation = degree;
+    public void setRotation(float degrees) {
+        polygon.setRotation(degrees);
         dirtyAttributes = true;
     }
 
-    /**
-     * Adds the specified rotation to the current rotation.
-     */
+    /** Adds the specified rotation to the current rotation. */
     public void rotateBy(float amountInDegrees) {
-        this.rotation += amountInDegrees;
+        polygon.rotate(amountInDegrees);
         dirtyAttributes = true;
     }
 
@@ -539,31 +528,31 @@ public class RepeatablePolygonSprite {
     }
 
     public float getX() {
-        return x;
+        return polygon.getX();
     }
 
     public float getY() {
-        return y;
+        return polygon.getY();
     }
 
     public float getOriginX() {
-        return originX;
+        return polygon.getOriginX();
     }
 
     public float getOriginY() {
-        return originY;
+        return polygon.getOriginY();
     }
 
     public float getScaleX() {
-        return scaleX;
+        return polygon.getScaleX();
     }
 
     public float getScaleY() {
-        return scaleY;
+        return polygon.getScaleY();
     }
 
     public float getRotation() {
-        return rotation;
+        return polygon.getRotation();
     }
 
     public Color getColor() {
@@ -577,8 +566,16 @@ public class RepeatablePolygonSprite {
         return vertices;
     }
 
+    public float[] getOriginalVertices() {
+        return polygon.getVertices().clone();
+    }
+
+    public float[] getTransformedVertices() {
+        return polygon.getTransformedVertices().clone();
+    }
+
     public Rectangle getBoundingRectangle() {
-        return new Rectangle(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+        return new Rectangle(boundingRect.getX(), boundingRect.getY(), boundingRect.getWidth(), boundingRect.getHeight());
     }
 
     public static class WrapType {
@@ -592,7 +589,7 @@ public class RepeatablePolygonSprite {
 
         public static void validate(int type) {
             if (!((type == STRETCH) | (type == REPEAT) | (type == REPEAT_MIRRORED))) {
-                throw new IllegalArgumentException("The given type is not valid: " + type);
+                throw new IllegalArgumentException("The given WrapType is not valid: " + type);
             }
         }
     }

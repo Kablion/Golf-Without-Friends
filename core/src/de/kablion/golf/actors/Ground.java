@@ -15,7 +15,7 @@ public class Ground extends ShapeActor {
     private final static float TEXTURE_WIDTH = 50;
     private final static float TEXTURE_HEIGHT = 50;
 
-    public Ground(float x, float y, float rotation, Array<Vector2> polygonPoints, AssetManager assets) {
+    public Ground(float x, float y, float rotation, Array<Vector2> polygonPoints, float textureOffsetX, float textureOffsetY, AssetManager assets) {
         super();
         setOrigin(x, y);
         setRotation(rotation);
@@ -26,7 +26,7 @@ public class Ground extends ShapeActor {
                 RepeatablePolygonSprite.WrapType.REPEAT,
                 RepeatablePolygonSprite.WrapType.REPEAT);
         setShape(findShape(polygonPoints));
-        getRepeatablePolygonSprite().setTextureOffset(getBoundingRectangle().width / 2, getBoundingRectangle().height / 2);
+        setTextureOffset(textureOffsetX, textureOffsetY);
 
     }
 

@@ -16,7 +16,7 @@ import de.kablion.golf.stages.WorldStage;
 public class GameScreen implements Screen {
 
     private final Application app;
-    private InputMultiplexer multiplexer;
+    private InputMultiplexer multiplexer = new InputMultiplexer();
     private World world;
     private WorldStage worldStage;
     private HUDStage hudStage;
@@ -31,7 +31,6 @@ public class GameScreen implements Screen {
         this.hudStage = new HUDStage(app, worldStage);
         this.cameraHandler = new CameraHandler(worldStage);
         this.cameraDetector = new GestureDetector(cameraHandler);
-        this.multiplexer = new InputMultiplexer();
     }
 
     @Override

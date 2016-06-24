@@ -21,18 +21,14 @@ public class World extends Group {
 
     private MapData mapData;
 
-    private Array<Ball> balls;
-    private Array<Wall> walls;
-    private Array<Ground> grounds;
-    private Array<Hole> holes;
+    private Array<Ball> balls = new Array<Ball>();
+    private Array<Wall> walls = new Array<Wall>();
+    private Array<Ground> grounds = new Array<Ground>();
+    private Array<Hole> holes = new Array<Hole>();
 
     public World(Application app, int playerAmount) {
         this.app = app;
         this.playerAmount = playerAmount;
-        balls = new Array<Ball>();
-        walls = new Array<Wall>();
-        grounds = new Array<Ground>();
-        holes = new Array<Hole>();
         initMapData();
     }
 
