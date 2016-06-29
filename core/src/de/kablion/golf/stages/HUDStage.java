@@ -31,6 +31,7 @@ import com.badlogic.gdx.utils.viewport.StretchViewport;
 
 import de.kablion.golf.Application;
 import de.kablion.golf.actors.Ball;
+import de.kablion.golf.actors.ShootArrow;
 import javafx.scene.control.Tab;
 
 import static de.kablion.golf.utils.Constants.*;
@@ -54,7 +55,6 @@ public class HUDStage extends Stage {
     private ImageButton backButton;
     private Slider powerBar;
 
-    private Vector3 shootVelocity = new Vector3();
     // FPS which is currently shown
     private float fpsCurrent;
     // When the fpsShown was last updated
@@ -76,7 +76,6 @@ public class HUDStage extends Stage {
         this.skin.addRegions(app.assets.get("skins/default.atlas", TextureAtlas.class));
         this.skin.add("default-font", app.font24);
         this.skin.load(Gdx.files.internal("skins/default.json"));
-        this.shootVelocity.set(0, 0, 0);
 
         initRoot();
         initButtons();
@@ -101,10 +100,12 @@ public class HUDStage extends Stage {
         powerBar.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                if (shootVelocity.x == 0 & shootVelocity.y == 0) {
-                    shootVelocity.set(0, 1, 0);
+                Vector2 tempShootVelocity = worldStage.getBall().getShootVelocity();
+                if (tempShootVelocity.x == 0 && tempShootVelocity.y == 0) {
+                    tempShootVelocity.set(0, 1);
                 }
-                shootVelocity.setLength(powerBar.getValue() * worldStage.getWorld().getMapData().maxShootSpeed);
+                tempShootVelocity.setLength(powerBar.getValue() * worldStage.getWorld().getMapData().maxShootSpeed);
+                worldStage.getBall().setShootVelocity(tempShootVelocity);
             }
         });
         shootButton = new ImageButton(hudSkin, "shoot-button");
@@ -112,14 +113,14 @@ public class HUDStage extends Stage {
             @Override
             public void clicked(InputEvent event, float x, float y) {
                 super.clicked(event, x, y);
-                if (!worldStage.getBall().isMoving() & !worldStage.getBall().isInHole() & !worldStage.getBall().isOffGround()) {
+                if (!worldStage.getBall().isMoving() && !worldStage.getBall().isInHole && !worldStage.getBall().isOffGround) {
                     if (powerBar.getValue() > 0.01f) {
-                        worldStage.getBall().shoot(shootVelocity);
+                        worldStage.getBall().shoot();
                         strokeLabel.setText("Stroke: " + worldStage.getBall().getStroke());
                     }
-                } else if (worldStage.getBall().isInHole()) {
+                } else if (worldStage.getBall().isInHole) {
                     app.setScreen(app.gameScreen);
-                } else if (worldStage.getBall().isOffGround()) {
+                } else if (worldStage.getBall().isOffGround) {
                     worldStage.getBall().resetBeforeShot();
                 }
 
@@ -208,10 +209,14 @@ public class HUDStage extends Stage {
             fpsLabel.setText("FPS: " + MathUtils.round(fpsCurrent));
         }
 
+        Ball ball = worldStage.getBall();
+
+        powerBar.setValue(ball.getShootVelocity().len() / worldStage.getWorld().getMapData().maxShootSpeed);
+
         if (worldStage.getBall().isMoving()) {
             powerBar.setValue(worldStage.getBall().getSpeed() / Ball.SHOOT_MULTIPLICATOR / worldStage.getWorld().getMapData().maxShootSpeed);
         }
-        if (worldStage.getBall().isInHole()) {
+        if (worldStage.getBall().isInHole) {
             powerBar.setValue(0);
         }
     }
@@ -219,18 +224,6 @@ public class HUDStage extends Stage {
     @Override
     public void draw() {
         super.draw();
-        Ball ball = worldStage.getBall();
-        if (!ball.isMoving() & !ball.isInHole() & !ball.isOffGround()) {
-            app.shapeRenderer.setColor(Color.WHITE);
-            app.shapeRenderer.setProjectionMatrix(worldStage.getCamera().combined);
-            app.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            app.shapeRenderer.rectLine(ball.getOriginX(),
-                    ball.getOriginY(),
-                    ball.getOriginX() + shootVelocity.x,
-                    ball.getOriginY() + shootVelocity.y,
-                    1.5f);
-            app.shapeRenderer.end();
-        }
     }
 
     @Override
@@ -238,45 +231,10 @@ public class HUDStage extends Stage {
         super.dispose();
         skin.dispose();
         hudSkin.dispose();
+        worldStage = null;
     }
 
-    @Override
-    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        boolean handled = super.touchDown(screenX, screenY, pointer, button);
-        if (worldStage.getMode() == WorldStage.PLAY_MODE) {
-            if (!handled & pointer == 0) {
-                Vector3 tempShootVelocity = worldStage.getCamera().unproject(new Vector3(screenX, screenY, 0));
-                tempShootVelocity.sub(worldStage.getBall().getOriginX(), worldStage.getBall().getOriginY(), 0);
-                if (tempShootVelocity.len() <= worldStage.getWorld().getMapData().maxShootSpeed * 2) {
-                    if (tempShootVelocity.len() > worldStage.getWorld().getMapData().maxShootSpeed) {
-                        tempShootVelocity.setLength(worldStage.getWorld().getMapData().maxShootSpeed);
-                    }
-                    shootVelocity = tempShootVelocity;
-                    powerBar.setValue(shootVelocity.len() / worldStage.getWorld().getMapData().maxShootSpeed);
-                    handled = true;
-                }
-            }
-        }
-        return handled;
-    }
-
-    @Override
-    public boolean touchDragged(int screenX, int screenY, int pointer) {
-        boolean handled = super.touchDragged(screenX, screenY, pointer);
-        if (worldStage.getMode() == WorldStage.PLAY_MODE) {
-            if (!handled & pointer == 0) {
-                Vector3 tempShootVelocity = worldStage.getCamera().unproject(new Vector3(screenX, screenY, 0));
-                tempShootVelocity.sub(worldStage.getBall().getOriginX(), worldStage.getBall().getOriginY(), 0);
-                if (tempShootVelocity.len() <= worldStage.getWorld().getMapData().maxShootSpeed * 2) {
-                    if (tempShootVelocity.len() > worldStage.getWorld().getMapData().maxShootSpeed) {
-                        tempShootVelocity.setLength(worldStage.getWorld().getMapData().maxShootSpeed);
-                    }
-                    shootVelocity = tempShootVelocity;
-                    powerBar.setValue(shootVelocity.len() / worldStage.getWorld().getMapData().maxShootSpeed);
-                    handled = true;
-                }
-            }
-        }
-        return handled;
+    public WorldStage getWorldStage() {
+        return worldStage;
     }
 }

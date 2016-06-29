@@ -2,17 +2,29 @@ package de.kablion.golf.actors;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.Circle;
-import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.scenes.scene2d.Actor;
+
+import de.kablion.golf.data.CollisionData;
 
 
-public class Hole extends ShapeActor {
+public class Hole extends Entity {
 
 
     public Hole(float x, float y,float radius){
-        super();
-        setOrigin(x, y);
-        setShape(new Circle(x,y,radius));
+        super(new float[]{radius, 0});
+        setPosition(x, y);
         setColor(Color.BLACK);
+    }
+
+    public boolean checkCollisionWithBall(Ball ball) {
+        CollisionData collisionData = checkCollisionWith(ball);
+        if (collisionData != null) {
+            if (collisionData.overlapDistance > ball.getRadius()) {
+                if (ball.getSpeed() < (this.getWidth() / 2) * 50) {
+                    ball.setInHole(this);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

@@ -22,9 +22,6 @@ public class World extends Group {
     private MapData mapData;
 
     private Array<Ball> balls = new Array<Ball>();
-    private Array<Wall> walls = new Array<Wall>();
-    private Array<Ground> grounds = new Array<Ground>();
-    private Array<Hole> holes = new Array<Hole>();
 
     public World(Application app, int playerAmount) {
         this.app = app;
@@ -40,21 +37,15 @@ public class World extends Group {
     public void reset() {
         clear();
         balls.clear();
-        walls.clear();
-        grounds.clear();
-        holes.clear();
 
         for (int i = 0; i < mapData.groundDatas.size; i++) {
-            grounds.add(mapData.groundDatas.get(i).toActor(app.assets));
-            addActor(grounds.get(i));
+            addActor(mapData.groundDatas.get(i).toActor(app.assets));
         }
         for (int i = 0; i < mapData.wallDatas.size; i++) {
-            walls.add(mapData.wallDatas.get(i).toActor(app.assets));
-            addActor(walls.get(i));
+            addActor(mapData.wallDatas.get(i).toActor(app.assets));
         }
         for (int i = 0; i < mapData.holeDatas.size; i++) {
-            holes.add(mapData.holeDatas.get(i).toActor(app.assets));
-            addActor(holes.get(i));
+            addActor(mapData.holeDatas.get(i).toActor(app.assets));
         }
 
         for (int i = 0; i < playerAmount; i++) {
@@ -83,17 +74,5 @@ public class World extends Group {
 
     public Array<Ball> getBalls() {
         return balls;
-    }
-
-    public Array<Wall> getWalls() {
-        return walls;
-    }
-
-    public Array<Ground> getGrounds() {
-        return grounds;
-    }
-
-    public Array<Hole> getHoles() {
-        return holes;
     }
 }

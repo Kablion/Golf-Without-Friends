@@ -10,7 +10,7 @@ public class AndroidLauncher extends AndroidApplication {
 	protected void onCreate (Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
-        config.numSamples = 4;
-        initialize(new Application(), config);
+		config.numSamples = 2;
+		initialize(new Application(), config);
 	}
 }

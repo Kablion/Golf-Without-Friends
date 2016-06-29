@@ -1,6 +1,8 @@
 package de.kablion.golf.utils;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -11,6 +13,7 @@ import com.badlogic.gdx.math.Polygon;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ShortArray;
 
 /**
@@ -20,7 +23,7 @@ import com.badlogic.gdx.utils.ShortArray;
  * @author Avetis Zakharyan (concept and first version)
  * @author Kablion (rewrite)
  */
-public class RepeatablePolygonSprite {
+public class RepeatablePolygonSprite implements Disposable {
 
     public final static int DEFAULT_WRAP_TYPE = WrapType.REPEAT;
 
@@ -30,6 +33,7 @@ public class RepeatablePolygonSprite {
     private int wrapTypeY = DEFAULT_WRAP_TYPE;
 
     private TextureRegion textureRegion;
+    private TextureRegion whiteTextureRegion;
 
     private Vector2 textureOffset = new Vector2();
     private float textureWidth = 0;
@@ -54,13 +58,20 @@ public class RepeatablePolygonSprite {
     private Polygon polygon = new Polygon();
     private Rectangle boundingRect = new Rectangle();
 
+    public RepeatablePolygonSprite() {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(Color.WHITE);
+        pixmap.fill();
+        this.whiteTextureRegion = new TextureRegion(new Texture(pixmap));
+        pixmap.dispose();
+    }
+
     /**
      * calculates the grid and the parts in relation to the texture Origin
      */
     private void prepareVertices() {
         parts.clear();
         if (polygon.getVertices().length == 0) return;
-        if (textureRegion == null) return;
         float[] vertices = polygon.getVertices().clone();
 
         Polygon polygon = new Polygon(vertices);
@@ -73,12 +84,12 @@ public class RepeatablePolygonSprite {
         Rectangle bounds = polygon.getBoundingRectangle();
 
 
-        if (wrapTypeX == WrapType.STRETCH) {
+        if (wrapTypeX == WrapType.STRETCH || textureRegion == null) {
             gridWidth = bounds.getWidth();
         } else {
             gridWidth = textureWidth;
         }
-        if (wrapTypeY == WrapType.STRETCH) {
+        if (wrapTypeY == WrapType.STRETCH || textureRegion == null) {
             gridHeight = bounds.getHeight();
         } else {
             gridHeight = textureHeight;
@@ -136,7 +147,6 @@ public class RepeatablePolygonSprite {
      */
     private void buildVertices() {
         vertices.clear();
-        if (textureRegion == null) return;
         if (polygon.getVertices().length == 0) return;
         for (int i = 0; i < parts.size; i++) {
             float verts[] = parts.get(i);
@@ -151,8 +161,10 @@ public class RepeatablePolygonSprite {
             int offsettedRow = row + (int) gridOffset.y;
 
             for (int j = 0; j < verts.length; j += 2) {
-                float x = (verts[j] + buildOffset.x + textureOffset.x) * getScaleX();
-                float y = (verts[j + 1] + buildOffset.y + textureOffset.y) * getScaleY();
+                float x = (verts[j] + buildOffset.x + textureOffset.x) - getOriginX();
+                x *= getScaleX();
+                float y = (verts[j + 1] + buildOffset.y + textureOffset.y) - getOriginY();
+                y *= getScaleY();
                 if (getRotation() != 0) {
                     float tempX = x;
                     float tempY = y;
@@ -179,8 +191,13 @@ public class RepeatablePolygonSprite {
                 if (wrapTypeX == WrapType.REPEAT_MIRRORED & (col & 1) == 0) u = 1 - u;
                 if (wrapTypeY == WrapType.REPEAT_MIRRORED & (row & 1) == 0) v = 1 - v;
 
-                u = textureRegion.getU() + (textureRegion.getU2() - textureRegion.getU()) * u;
-                v = textureRegion.getV() + (textureRegion.getV2() - textureRegion.getV()) * v;
+                if (textureRegion != null) {
+                    u = textureRegion.getU() + (textureRegion.getU2() - textureRegion.getU()) * u;
+                    v = textureRegion.getV() + (textureRegion.getV2() - textureRegion.getV()) * v;
+                } else {
+                    u = whiteTextureRegion.getU() + (whiteTextureRegion.getU2() - whiteTextureRegion.getU()) * u;
+                    v = whiteTextureRegion.getV() + (whiteTextureRegion.getV2() - whiteTextureRegion.getV()) * v;
+                }
                 fullVerts[idx++] = u;
                 fullVerts[idx++] = v;
             }
@@ -196,10 +213,10 @@ public class RepeatablePolygonSprite {
             this.textureDebugX = tempX * (float) Math.cos(rotationInRads) - tempY * (float) Math.sin(rotationInRads);
             this.textureDebugY = tempY * (float) Math.cos(rotationInRads) + tempX * (float) Math.sin(rotationInRads);
         }
-        this.textureDebugX += getX() + getOriginX();
-        this.textureDebugY += getY() + getOriginY();
+        this.textureDebugX += getX();
+        this.textureDebugY += getY();
 
-        this.boundingRect = polygon.getBoundingRectangle();
+        this.boundingRect = this.polygon.getBoundingRectangle();
 
         dirtyAttributes = false;
     }
@@ -266,8 +283,15 @@ public class RepeatablePolygonSprite {
             buildVertices();
         }
 
+        Texture textureToDraw;
+        if (textureRegion != null) {
+            textureToDraw = textureRegion.getTexture();
+        } else {
+            textureToDraw = whiteTextureRegion.getTexture();
+        }
+
         for (int i = 0; i < vertices.size; i++) {
-            batch.draw(textureRegion.getTexture(), vertices.get(i), 0, vertices.get(i).length, indices.get(i), 0, indices.get(i).length);
+            batch.draw(textureToDraw, vertices.get(i), 0, vertices.get(i).length, indices.get(i), 0, indices.get(i).length);
         }
     }
 
@@ -303,6 +327,27 @@ public class RepeatablePolygonSprite {
                 textureDebugX + 1, textureDebugY + 1);
         shapes.line(textureDebugX - 1, textureDebugY + 1,
                 textureDebugX + 1, textureDebugY - 1);
+    }
+
+    @Override
+    public void dispose() {
+        whiteTextureRegion.getTexture().dispose();
+        whiteTextureRegion = null;
+        if (textureRegion != null) {
+            textureRegion.getTexture().dispose();
+            textureRegion = null;
+        }
+        polygon = null;
+        boundingRect = null;
+        parts.clear();
+        parts = null;
+        vertices.clear();
+        vertices = null;
+        indices.clear();
+        indices = null;
+        buildOffset = null;
+        gridOffset = null;
+        textureOffset = null;
     }
 
     /**
@@ -427,13 +472,11 @@ public class RepeatablePolygonSprite {
     /** Sets the origin x in relation to the sprite's position for scaling and rotation. */
     public void setOriginX(float x) {
         setOrigin(x, getOriginY());
-        dirtyAttributes = true;
     }
 
     /** Sets the origin y in relation to the sprite's position for scaling and rotation. */
     public void setOriginY(float y) {
         setOrigin(getOriginX(),y);
-        dirtyAttributes = true;
     }
 
     /** Sets the scale along both axises where 1 = normal Size */
@@ -574,8 +617,18 @@ public class RepeatablePolygonSprite {
         return polygon.getTransformedVertices().clone();
     }
 
+    public Polygon getPolygon() {
+        Polygon tempPolygon = new Polygon();
+        if (getOriginalVertices().length != 0) tempPolygon.setVertices(getOriginalVertices());
+        tempPolygon.setPosition(getX(), getY());
+        tempPolygon.setOrigin(getOriginX(), getOriginY());
+        tempPolygon.setRotation(getRotation());
+        tempPolygon.setScale(getScaleX(), getScaleY());
+        return tempPolygon;
+    }
+
     public Rectangle getBoundingRectangle() {
-        return new Rectangle(boundingRect.getX(), boundingRect.getY(), boundingRect.getWidth(), boundingRect.getHeight());
+        return this.boundingRect;
     }
 
     public static class WrapType {

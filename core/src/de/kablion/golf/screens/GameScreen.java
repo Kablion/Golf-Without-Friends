@@ -36,10 +36,10 @@ public class GameScreen implements Screen {
     @Override
     public void show() {
         System.out.println("GAME");
-        multiplexer.addProcessor(hudStage);
-        multiplexer.addProcessor(worldStage);
         multiplexer.addProcessor(cameraDetector);
         multiplexer.addProcessor(cameraHandler);
+        multiplexer.addProcessor(hudStage);
+        multiplexer.addProcessor(worldStage);
         Gdx.input.setInputProcessor(multiplexer);
 
         world.reset();

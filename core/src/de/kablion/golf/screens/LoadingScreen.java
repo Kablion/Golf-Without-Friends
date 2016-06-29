@@ -4,6 +4,7 @@ package de.kablion.golf.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.loaders.SkinLoader;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -77,7 +78,7 @@ public class LoadingScreen implements Screen {
     public void update(float delta){
         progressBar.setValue( app.assets.getProgress());
         stage.act();
-        if (app.assets.update() & progressBar.getVisualValue() == progressBar.getMaxValue()) {
+        if (app.assets.update() & Math.abs(progressBar.getVisualValue() - progressBar.getMaxValue()) < 0.001f) {
             app.setScreen(app.mainMenuScreen);
         }
     }

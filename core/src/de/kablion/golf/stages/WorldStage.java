@@ -1,10 +1,12 @@
 package de.kablion.golf.stages;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 
 import de.kablion.golf.Application;
+import de.kablion.golf.actors.ShootArrow;
 import de.kablion.golf.actors.World;
 import de.kablion.golf.actors.Ball;
 
@@ -25,6 +27,7 @@ public class WorldStage extends Stage {
         this.world = world;
         this.player = player;
         addActor(world);
+        addActor(new ShootArrow(this));
     }
 
     public void reset(){
@@ -45,7 +48,40 @@ public class WorldStage extends Stage {
     @Override
     public void draw() {
         super.draw();
+    }
 
+    @Override
+    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        boolean handled = super.touchDown(screenX, screenY, pointer, button);
+        if (!handled && getMode() == PLAY_MODE) {
+            Vector3 tempShootVelocity = getCamera().unproject(new Vector3(screenX, screenY, 0));
+            tempShootVelocity.sub(getBall().getX(), getBall().getY(), 0);
+            if (tempShootVelocity.len() <= getWorld().getMapData().maxShootSpeed * 2) {
+                if (tempShootVelocity.len() > getWorld().getMapData().maxShootSpeed) {
+                    tempShootVelocity.setLength(getWorld().getMapData().maxShootSpeed);
+                }
+                getBall().setShootVelocity(tempShootVelocity.x, tempShootVelocity.y);
+                handled = true;
+            }
+        }
+        return handled;
+    }
+
+    @Override
+    public boolean touchDragged(int screenX, int screenY, int pointer) {
+        boolean handled = super.touchDragged(screenX, screenY, pointer);
+        if (!handled && getMode() == PLAY_MODE) {
+            Vector3 tempShootVelocity = getCamera().unproject(new Vector3(screenX, screenY, 0));
+            tempShootVelocity.sub(getBall().getX(), getBall().getY(), 0);
+            if (tempShootVelocity.len() <= getWorld().getMapData().maxShootSpeed * 2) {
+                if (tempShootVelocity.len() > getWorld().getMapData().maxShootSpeed) {
+                    tempShootVelocity.setLength(getWorld().getMapData().maxShootSpeed);
+                }
+                getBall().setShootVelocity(tempShootVelocity.x, tempShootVelocity.y);
+                handled = true;
+            }
+        }
+        return handled;
     }
 
     @Override
