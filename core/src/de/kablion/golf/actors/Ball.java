@@ -175,6 +175,7 @@ public class Ball extends Entity {
 
     public void resetBeforeShot() {
         velocity.set(0, 0);
+        setShootVelocity(0, 0);
         setPosition(positionBeforeShot.x, positionBeforeShot.y);
     }
 

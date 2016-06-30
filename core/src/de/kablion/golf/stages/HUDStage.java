@@ -96,7 +96,7 @@ public class HUDStage extends Stage {
 
     private void initShootBar() {
         shootBar.clear();
-        powerBar = new Slider(0.001f, 1, 0.001f, false, skin);
+        powerBar = new Slider(0.01f, 1, 0.001f, false, skin);
         powerBar.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -213,11 +213,12 @@ public class HUDStage extends Stage {
 
         powerBar.setValue(ball.getShootVelocity().len() / worldStage.getWorld().getMapData().maxShootSpeed);
 
-        if (worldStage.getBall().isMoving()) {
-            powerBar.setValue(worldStage.getBall().getSpeed() / Ball.SHOOT_MULTIPLICATOR / worldStage.getWorld().getMapData().maxShootSpeed);
-        }
-        if (worldStage.getBall().isInHole) {
-            powerBar.setValue(0);
+        if (ball.isMoving()) {
+            powerBar.setValue(ball.getSpeed() / Ball.SHOOT_MULTIPLICATOR / worldStage.getWorld().getMapData().maxShootSpeed);
+        } else {
+            if (ball.isInHole || ball.isOffGround) {
+                powerBar.setValue(0.01f);
+            }
         }
     }
 

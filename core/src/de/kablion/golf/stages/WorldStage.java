@@ -17,6 +17,9 @@ public class WorldStage extends Stage {
     public static final int PLAY_MODE = 0;
     public static final int CAMERA_MODE = 1;
 
+    private static final int NO_PRIME_POINTER = -1;
+    private int primePointer;
+
     private int mode;
     private int player;
     private World world;
@@ -53,7 +56,7 @@ public class WorldStage extends Stage {
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         boolean handled = super.touchDown(screenX, screenY, pointer, button);
-        if (!handled && getMode() == PLAY_MODE) {
+        if (!handled && getMode() == PLAY_MODE && (pointer == NO_PRIME_POINTER || pointer == primePointer)) {
             Vector3 tempShootVelocity = getCamera().unproject(new Vector3(screenX, screenY, 0));
             tempShootVelocity.sub(getBall().getX(), getBall().getY(), 0);
             if (tempShootVelocity.len() <= getWorld().getMapData().maxShootSpeed * 2) {
@@ -63,7 +66,15 @@ public class WorldStage extends Stage {
                 getBall().setShootVelocity(tempShootVelocity.x, tempShootVelocity.y);
                 handled = true;
             }
+            primePointer = pointer;
         }
+        return handled;
+    }
+
+    @Override
+    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        boolean handled = super.touchUp(screenX, screenY, pointer, button);
+        if (pointer == primePointer) primePointer = NO_PRIME_POINTER;
         return handled;
     }
 
@@ -80,6 +91,7 @@ public class WorldStage extends Stage {
                 getBall().setShootVelocity(tempShootVelocity.x, tempShootVelocity.y);
                 handled = true;
             }
+            primePointer = pointer;
         }
         return handled;
     }
