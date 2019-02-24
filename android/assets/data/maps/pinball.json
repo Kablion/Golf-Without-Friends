@@ -1,0 +1,348 @@
+{
+name: Pinball
+maxShootSpeed: 200
+ball: {
+	position: {
+		y: 50
+	}
+}
+camera: {
+	position: {
+		y: 130
+	}
+}
+entities: [
+	{
+		class: de.kablion.golf.data.actors.GroundData
+		vertices: [ -150, -300, 150, 300 ]
+		position: {
+			y: 250
+		}
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		position: {
+			x: -135
+			y: -25
+		}
+		toPosition: {
+			x: 135
+			y: -25
+		}
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		position: {
+			x: -135
+			y: -25
+		}
+		toPosition: {
+			x: -135
+			y: 400
+		}
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		position: {
+			x: 135
+			y: -25
+		}
+		toPosition: {
+			x: 135
+			y: 400
+		}
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			y: 125
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 50
+			y: 125
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 100
+			y: 125
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -50
+			y: 125
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -100
+			y: 125
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 25
+			y: 175
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -25
+			y: 175
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -75
+			y: 175
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 75
+			y: 175
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			y: 225
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -50
+			y: 225
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 50
+			y: 225
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 100
+			y: 225
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -100
+			y: 225
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -25
+			y: 175
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -25
+			y: 275
+		}
+		length: 15
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 25
+			y: 275
+		}
+		length: 15
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 75
+			y: 275
+		}
+		length: 15
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -75
+			y: 275
+		}
+		length: 15
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -75
+			y: 275
+		}
+		length: 15
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			y: 325
+		}
+		length: 13
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 50
+			y: 325
+		}
+		length: 13
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 100
+			y: 325
+		}
+		length: 13
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -100
+			y: 325
+		}
+		length: 13
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -50
+			y: 325
+		}
+		length: 13
+	}
+	{
+		class: de.kablion.golf.data.actors.HoleData
+		position: {
+			y: 400
+		}
+	}
+	{
+		class: de.kablion.golf.data.actors.MagnetData
+		position: {
+			x: 75
+			y: 400
+		}
+		range: 50
+	}
+	{
+		class: de.kablion.golf.data.actors.MagnetData
+		position: {
+			x: -75
+			y: 400
+		}
+		range: 50
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		position: {
+			x: -135
+			y: 525
+		}
+		toPosition: {
+			x: 135
+			y: 525
+		}
+		width: 20
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -125
+			y: 475
+		}
+		length: 20
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 125
+			y: 475
+		}
+		length: 20
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -135
+			y: -25
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 135
+			y: -25
+		}
+		length: 10
+	}
+]
+}

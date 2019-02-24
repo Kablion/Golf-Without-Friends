@@ -145,7 +145,7 @@ public class Collision {
 
         // check if circle(first) is fully in polygon(second)
         if (minOverLap >= circle.radius * 2) {
-            collisionData.isFirstInSecond = true;
+            collisionData.isSecondInFirst = true;
             collisionData.normalFirstToSecond = null;
             return collisionData;
         }
@@ -159,7 +159,7 @@ public class Collision {
             }
         }
         if (isInCircle) {
-            collisionData.isSecondInFirst = true;
+            collisionData.isFirstInSecond = true;
             collisionData.normalFirstToSecond = null;
             return collisionData;
         }
@@ -197,6 +197,7 @@ public class Collision {
     }
 
     public static CollisionData checkPolygonPolygon(Polygon polygon1, Polygon polygon2) {
+        // not Done
         return null;
     }
 

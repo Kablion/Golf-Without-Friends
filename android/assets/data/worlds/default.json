@@ -1,0 +1,208 @@
+{
+name: Debug World
+maps: [
+	{
+		name: 1st Debug Map
+		maxShootSpeed: 200
+		ball: {
+			position: {
+				y: 85
+			}
+		}
+		camera: {
+			position: {
+				y: 130
+			}
+		}
+		entities: [
+			{
+				class: de.kablion.golf.data.actors.GroundData
+				vertices: [ -100, -50, 100, 100 ]
+				position: {
+					y: 50
+				}
+				textureOffset: {
+					x: 100
+					y: 225
+				}
+			}
+			{
+				class: de.kablion.golf.data.actors.GroundData
+				vertices: [ 150, 0 ]
+				position: {
+					y: 200
+				}
+				textureOffset: {
+					x: 150
+					y: 150
+				}
+			}
+			{
+				class: de.kablion.golf.data.actors.MagnetData
+				position: {
+					x: -60
+					y: 220
+				}
+				range: 50
+				strength: 300
+			}
+			{
+				class: de.kablion.golf.data.actors.WallData
+				position: {
+					x: -90
+				}
+				toPosition: {
+					x: -90
+					y: 100
+				}
+			}
+			{
+				class: de.kablion.golf.data.actors.WallData
+				position: {
+					x: -90
+					y: 100
+				}
+				toPosition: {
+					x: -150
+					y: 200
+				}
+			}
+			{
+				class: de.kablion.golf.data.actors.WallData
+				position: {
+					x: -150
+					y: 200
+				}
+				toPosition: {
+					y: 350
+				}
+			}
+			{
+				class: de.kablion.golf.data.actors.WallData
+				position: {
+					y: 350
+				}
+				toPosition: {
+					x: 150
+					y: 200
+				}
+			}
+			{
+				class: de.kablion.golf.data.actors.WallData
+				position: {
+					x: 150
+					y: 200
+				}
+				toPosition: {
+					x: 90
+					y: 100
+				}
+			}
+			{
+				class: de.kablion.golf.data.actors.WallData
+				position: {
+					x: 90
+				}
+				toPosition: {
+					x: 90
+					y: 100
+				}
+			}
+			{
+				class: de.kablion.golf.data.actors.WallData
+				isCircle: true
+				position: {
+					x: -90
+					y: 100
+				}
+				length: 10
+			}
+			{
+				class: de.kablion.golf.data.actors.WallData
+				isCircle: true
+				position: {
+					x: -150
+					y: 200
+				}
+				length: 10
+			}
+			{
+				class: de.kablion.golf.data.actors.WallData
+				isCircle: true
+				position: {
+					y: 350
+				}
+				length: 10
+			}
+			{
+				class: de.kablion.golf.data.actors.WallData
+				isCircle: true
+				position: {
+					x: 150
+					y: 200
+				}
+				length: 10
+			}
+			{
+				class: de.kablion.golf.data.actors.WallData
+				isCircle: true
+				position: {
+					x: 90
+					y: 100
+				}
+				length: 10
+			}
+			{
+				class: de.kablion.golf.data.actors.HoleData
+				position: {
+					y: 300
+				}
+			}
+		]
+	}
+	{
+		name: 2nd Debug Map
+		maxShootSpeed: 200
+		ball: {
+			position: {
+				y: 85
+			}
+		}
+		camera: {
+			position: {
+				y: 130
+			}
+		}
+		entities: [
+			{
+				class: de.kablion.golf.data.actors.GroundData
+				vertices: [ -100, -50, 100, 100 ]
+				position: {
+					y: 50
+				}
+				textureOffset: {
+					x: 100
+					y: 225
+				}
+			}
+			{
+				class: de.kablion.golf.data.actors.GroundData
+				vertices: [ 150, 0 ]
+				position: {
+					y: 200
+				}
+				textureOffset: {
+					x: 150
+					y: 150
+				}
+			}
+			{
+				class: de.kablion.golf.data.actors.HoleData
+				position: {
+					y: 300
+				}
+			}
+		]
+	}
+]
+}

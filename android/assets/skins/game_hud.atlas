@@ -1,67 +1,74 @@
 game_hud.png
-size: 1507, 1000
+size: 1707, 700
 format: RGBA8888
 filter: Linear,Linear
 repeat: none
 back_button
-  rotate: false
-  xy: 600, 0
-  size: 200, 200
-  orig: 200, 200
-  offset: 0, 0
-  index: -1
-back_button_pushed
-  rotate: false
-  xy: 400, 0
-  size: 200, 200
-  orig: 200, 200
-  offset: 0, 0
-  index: -1
-camera_button
   rotate: false
   xy: 0, 0
   size: 200, 200
   orig: 200, 200
   offset: 0, 0
   index: -1
-camera_button_pushed
+back_button_pushed
   rotate: false
   xy: 200, 0
   size: 200, 200
   orig: 200, 200
   offset: 0, 0
   index: -1
+camera_button
+  rotate: false
+  xy: 400, 0
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+camera_button_pushed
+  rotate: false
+  xy: 600, 0
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
 camera_overlay
   rotate: false
-  xy: 1107, 600
+  xy: 800, 0
   size: 400, 400
   orig: 400, 400
   offset: 0, 0
   index: -1
-empty_power_bar
+follow_ball_button
   rotate: false
-  xy: 0, 600
-  size: 1107, 300
-  orig: 1107, 300
+  xy: 1200, 0
+  size: 200, 200
+  orig: 200, 200
   offset: 0, 0
   index: -1
-filled_power_bar
+follow_ball_button_pushed
   rotate: false
-  xy: 0, 300
+  xy: 1400, 0
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+power_bar_background
+  rotate: false
+  xy: 0, 400
   size: 1107, 300
   orig: 1107, 300
   offset: 0, 0
   index: -1
 shoot_button
   rotate: false
-  xy: 800, 0
+  xy: 1107, 400
   size: 300, 300
   orig: 300, 300
   offset: 0, 0
   index: -1
 shoot_button_pushed
   rotate: false
-  xy: 1107, 300
+  xy: 1407, 400
   size: 300, 300
   orig: 300, 300
   offset: 0, 0

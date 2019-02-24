@@ -1,14 +1,9 @@
 {
   com.badlogic.gdx.scenes.scene2d.ui.ImageButton$ImageButtonStyle: {
+  follow-ball-toggle: { down: follow_ball_button_pushed, up:  follow_ball_button, checked:  follow_ball_button_pushed }
   camera-mode-toggle: { down: camera_button_pushed, up: camera_button, checked: camera_button_pushed },
   back-button: { down: back_button_pushed, up: back_button},
   shoot-button: { down: shoot_button_pushed, up: shoot_button }
-},
-  com.badlogic.gdx.scenes.scene2d.ui.ProgressBar$ProgressBarStyle: {
-  power-bar: { knobAfter: empty_power_bar, knob: filled_power_bar }
-},
-  com.badlogic.gdx.scenes.scene2d.ui.Slider$SliderStyle: {
-  power-bar: { knobAfter: empty_power_bar, knobBefore: filled_power_bar }
 }
 
 }

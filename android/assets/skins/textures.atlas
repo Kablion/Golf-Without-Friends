@@ -1,0 +1,47 @@
+textures.png
+size: 900, 1528
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+ground_texture
+  rotate: false
+  xy: 0, 0
+  size: 400, 400
+  orig: 400, 400
+  offset: 0, 0
+  index: -1
+magnet_texture
+  rotate: false
+  xy: 400, 0
+  size: 500, 500
+  orig: 500, 500
+  offset: 0, 0
+  index: -1
+round_wall_texture
+  rotate: false
+  xy: 0, 500
+  size: 500, 500
+  orig: 500, 500
+  offset: 0, 0
+  index: -1
+wall_texture
+  rotate: false
+  xy: 500, 500
+  size: 236, 236
+  orig: 236, 236
+  offset: 0, 0
+  index: -1
+wall_texture_
+  rotate: false
+  xy: 0, 1000
+  size: 687, 528
+  orig: 687, 528
+  offset: 0, 0
+  index: -1
+white
+  rotate: false
+  xy: 687, 1000
+  size: 1, 1
+  orig: 1, 1
+  offset: 0, 0
+  index: -1

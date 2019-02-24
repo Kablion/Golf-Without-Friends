@@ -1,0 +1,44 @@
+{
+name: 2nd Debug Map
+maxShootSpeed: 200
+ball: {
+	position: {
+		y: 85
+	}
+}
+camera: {
+	position: {
+		y: 130
+	}
+}
+entities: [
+	{
+		class: de.kablion.golf.data.actors.GroundData
+		vertices: [ -100, -50, 100, 100 ]
+		position: {
+			y: 25
+		}
+		textureOffset: {
+			x: 100
+			y: 225
+		}
+	}
+	{
+		class: de.kablion.golf.data.actors.GroundData
+		vertices: [ 150, 0 ]
+		position: {
+			y: 200
+		}
+		textureOffset: {
+			x: 150
+			y: 150
+		}
+	}
+	{
+		class: de.kablion.golf.data.actors.HoleData
+		position: {
+			y: 300
+		}
+	}
+]
+}

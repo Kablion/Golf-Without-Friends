@@ -1,28 +1,33 @@
 package de.kablion.golf.stages;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 
 import de.kablion.golf.Application;
 import de.kablion.golf.actors.ShootArrow;
 import de.kablion.golf.actors.World;
-import de.kablion.golf.actors.Ball;
+import de.kablion.golf.actors.entities.Ball;
 
 public class WorldStage extends Stage {
 
+    /**
+     * Stage that handles and represents the World for one player
+     */
+
+    public enum InputMode {
+        PLAY, CAMERA
+    }
+
     private Application app;
 
-    public static final int PLAY_MODE = 0;
-    public static final int CAMERA_MODE = 1;
-
-    private static final int NO_PRIME_POINTER = -1;
-    private int primePointer;
-
-    private int mode;
-    private int player;
     private World world;
+
+    private InputMode mode;
+    private int player;
+
+    public boolean isCameraOnBall = true;
 
     public WorldStage(Application app, World world, int player) {
         super(new ExtendViewport(10, 10), app.polyBatch);
@@ -33,19 +38,27 @@ public class WorldStage extends Stage {
         addActor(new ShootArrow(this));
     }
 
-    public void reset(){
-        mode = PLAY_MODE;
+    public void reset() {
+        mode = InputMode.PLAY;
 
-        float aspectRatio = Gdx.graphics.getHeight() / Gdx.graphics.getHeight();
+        float aspectRatio = (float)Gdx.graphics.getHeight() / (float)Gdx.graphics.getWidth();
 
-        ExtendViewport view = new ExtendViewport(world.getMapData().cameraData.cmPerDisplayWidth, world.getMapData().cameraData.cmPerDisplayWidth * aspectRatio);
+        ExtendViewport view = new ExtendViewport(world.getMapData().camera.cmPerDisplayWidth, world.getMapData().camera.cmPerDisplayWidth * aspectRatio);
         setViewport(view);
-        getCamera().position.set(world.getMapData().cameraData.startingPosition);
+        getCamera().position.set(world.getMapData().camera.position);
+    }
+
+    public void updateCamera() {
+        //if (getMode() == InputMode.PLAY && isCameraOnBall && getBall().isMoving()) {
+        if (getMode() == InputMode.PLAY && isCameraOnBall) {
+            getCamera().position.set(getBall().getX(), getBall().getY(), getCamera().position.z);
+        }
     }
 
     @Override
-    public void act() {
-        super.act();
+    public void act(float delta) {
+        super.act(delta);
+        updateCamera();
     }
 
     @Override
@@ -53,64 +66,35 @@ public class WorldStage extends Stage {
         super.draw();
     }
 
-    @Override
-    public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-        boolean handled = super.touchDown(screenX, screenY, pointer, button);
-        if (!handled && getMode() == PLAY_MODE && (pointer == NO_PRIME_POINTER || pointer == primePointer)) {
-            Vector3 tempShootVelocity = getCamera().unproject(new Vector3(screenX, screenY, 0));
-            tempShootVelocity.sub(getBall().getX(), getBall().getY(), 0);
-            if (tempShootVelocity.len() <= getWorld().getMapData().maxShootSpeed * 2) {
-                if (tempShootVelocity.len() > getWorld().getMapData().maxShootSpeed) {
-                    tempShootVelocity.setLength(getWorld().getMapData().maxShootSpeed);
-                }
-                getBall().setShootVelocity(tempShootVelocity.x, tempShootVelocity.y);
-                handled = true;
-            }
-            primePointer = pointer;
-        }
-        return handled;
+    public void resize(int width, int height) {
+        getViewport().update(width, height, false);
+        getCamera().position.set(getCamera().position.x, getCamera().position.y, getCamera().position.z);
     }
 
-    @Override
-    public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        boolean handled = super.touchUp(screenX, screenY, pointer, button);
-        if (pointer == primePointer) primePointer = NO_PRIME_POINTER;
-        return handled;
-    }
+    public void shoot() {
 
-    @Override
-    public boolean touchDragged(int screenX, int screenY, int pointer) {
-        boolean handled = super.touchDragged(screenX, screenY, pointer);
-        if (!handled && getMode() == PLAY_MODE) {
-            Vector3 tempShootVelocity = getCamera().unproject(new Vector3(screenX, screenY, 0));
-            tempShootVelocity.sub(getBall().getX(), getBall().getY(), 0);
-            if (tempShootVelocity.len() <= getWorld().getMapData().maxShootSpeed * 2) {
-                if (tempShootVelocity.len() > getWorld().getMapData().maxShootSpeed) {
-                    tempShootVelocity.setLength(getWorld().getMapData().maxShootSpeed);
-                }
-                getBall().setShootVelocity(tempShootVelocity.x, tempShootVelocity.y);
-                handled = true;
+        if (!getBall().isMoving() && !getBall().isInHole && !getBall().isOffGround) {
+            //if (powerBar.getValue() > 0.01f) {
+            if (getBall().getShootVelocity().len() > getBall().getRadius()*1.5) {
+                getBall().shoot();
+                app.assets.get("sounds/shoot.wav", Sound.class).play();
+
             }
-            primePointer = pointer;
         }
-        return handled;
+        getBall().setShootVelocity(0,0);
     }
 
     @Override
     public void dispose() {
-        super.dispose();
+        clear();
     }
 
-    public int getMode() {
+    public InputMode getMode() {
         return mode;
     }
 
-    public void setMode(int mode) {
-        if (mode == CAMERA_MODE | mode == PLAY_MODE) {
-            this.mode = mode;
-        } else {
-            throw new IllegalArgumentException("Mode is not defined: " + mode);
-        }
+    public void setMode(InputMode mode) {
+        this.mode = mode;
     }
 
     public Ball getBall() {

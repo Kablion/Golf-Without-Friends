@@ -25,12 +25,14 @@ import com.badlogic.gdx.utils.ShortArray;
  */
 public class RepeatablePolygonSprite implements Disposable {
 
-    public final static int DEFAULT_WRAP_TYPE = WrapType.REPEAT;
+    public enum WrapType {
+        STRETCH,REPEAT,REPEAT_MIRRORED
+    }
+
+    private WrapType wrapTypeX = WrapType.REPEAT;
+    private WrapType wrapTypeY = WrapType.REPEAT;
 
     private final Color color = new Color(Color.WHITE);
-
-    private int wrapTypeX = DEFAULT_WRAP_TYPE;
-    private int wrapTypeY = DEFAULT_WRAP_TYPE;
 
     private TextureRegion textureRegion;
     private TextureRegion whiteTextureRegion;
@@ -188,7 +190,7 @@ public class RepeatablePolygonSprite implements Disposable {
                 if (u < 0.0f) u = 0.0f;
                 if (v < 0.0f) v = 0.0f;
                 // (col & 1 == 0) == true : col is even
-                if (wrapTypeX == WrapType.REPEAT_MIRRORED & (col & 1) == 0) u = 1 - u;
+                if (wrapTypeX == WrapType.REPEAT_MIRRORED & (col & 1) != 0) u = 1 - u;
                 if (wrapTypeY == WrapType.REPEAT_MIRRORED & (row & 1) == 0) v = 1 - v;
 
                 if (textureRegion != null) {
@@ -234,14 +236,14 @@ public class RepeatablePolygonSprite implements Disposable {
             float inGridY = resultVerts[i + 1] - row * gridHeight;
             float inGridXFraction = inGridX / gridWidth;
             float inGridYFraction = inGridY / gridHeight;
-            if (inGridXFraction != 1 & inGridXFraction > 0.99f) {
+            if (inGridXFraction != 1 & inGridXFraction > 0.9999f) {
                 resultVerts[i] = (col + 1) * gridWidth;
-            } else if (inGridXFraction != 0 & inGridXFraction < 0.01f) {
+            } else if (inGridXFraction != 0 & inGridXFraction < 0.0001f) {
                 resultVerts[i] = col * gridWidth;
             }
-            if (inGridYFraction != 1 & inGridYFraction > 0.99f) {
+            if (inGridYFraction != 1 & inGridYFraction > 0.9999f) {
                 resultVerts[i + 1] = (row + 1) * gridHeight;
-            } else if (inGridYFraction != 0 & inGridYFraction < 0.01f) {
+            } else if (inGridYFraction != 0 & inGridYFraction < 0.0001f) {
                 resultVerts[i + 1] = row * gridHeight;
             }
         }
@@ -376,7 +378,7 @@ public class RepeatablePolygonSprite implements Disposable {
      * @param wrapTypeX     - WrapType how the texture region is drawn along the X-Axis
      * @param wrapTypeY     - WrapType how the texture region is drawn along the Y-Axis
      */
-    public void setTextureRegion(TextureRegion textureRegion, int wrapTypeX, int wrapTypeY) {
+    public void setTextureRegion(TextureRegion textureRegion, WrapType wrapTypeX, WrapType wrapTypeY) {
         setTextureRegion(textureRegion);
         setWrapTypeX(wrapTypeX);
         setWrapTypeY(wrapTypeY);
@@ -403,7 +405,7 @@ public class RepeatablePolygonSprite implements Disposable {
      * @param wrapTypeX     - WrapType how the texture region is drawn along the X-Axis
      * @param wrapTypeY     - WrapType how the texture region is drawn along the Y-Axis
      */
-    public void setTextureRegion(TextureRegion textureRegion, float textureWidth, float textureHeight, int wrapTypeX, int wrapTypeY) {
+    public void setTextureRegion(TextureRegion textureRegion, float textureWidth, float textureHeight, WrapType wrapTypeX, WrapType wrapTypeY) {
         setTextureRegion(textureRegion);
         setTextureSize(textureWidth, textureHeight);
         setWrapTypeX(wrapTypeX);
@@ -411,7 +413,7 @@ public class RepeatablePolygonSprite implements Disposable {
     }
 
     /**
-     * Sets the texture region, the size of repeating grid is equal to region size
+     * Sets the texture region, the size of repeating grid is equal to region size if not set already
      *
      * @param textureRegion - texture region mapped on the polygon
      */
@@ -430,16 +432,20 @@ public class RepeatablePolygonSprite implements Disposable {
         dirtyGrid = true;
     }
 
-    /** Sets the to be drawn width and height of the texture */
+    /**
+     * Sets the to be drawn width and height of the texture
+     */
     public void setTextureSize(float width, float height) {
         this.textureWidth = width;
         this.textureHeight = height;
         dirtyGrid = true;
     }
 
-    /** Sets the sprite's position in the world */
+    /**
+     * Sets the sprite's position in the world
+     */
     public void setPosition(float x, float y) {
-        polygon.setPosition(x,y);
+        polygon.setPosition(x, y);
         dirtyAttributes = true;
     }
 
@@ -447,65 +453,85 @@ public class RepeatablePolygonSprite implements Disposable {
      * Sets the sprite's x position in the world
      */
     public void setX(float x) {
-        polygon.setPosition(x,getY());
+        polygon.setPosition(x, getY());
         dirtyAttributes = true;
     }
 
-    /** Sets the sprite's y position in the world */
+    /**
+     * Sets the sprite's y position in the world
+     */
     public void setY(float y) {
-        polygon.setPosition(getX(),y);
+        polygon.setPosition(getX(), y);
         dirtyAttributes = true;
     }
 
-    /** Sets the sprite's position in the world */
+    /**
+     * Sets the sprite's position in the world
+     */
     public void translate(float x, float y) {
-        polygon.setPosition(getX() +x,getY()+y);
+        polygon.setPosition(getX() + x, getY() + y);
         dirtyAttributes = true;
     }
 
-    /** Sets the origin in relation to the sprite's position for scaling and rotation. */
+    /**
+     * Sets the origin in relation to the sprite's position for scaling and rotation.
+     */
     public void setOrigin(float x, float y) {
-        polygon.setOrigin(x,y);
+        polygon.setOrigin(x, y);
         dirtyAttributes = true;
     }
 
-    /** Sets the origin x in relation to the sprite's position for scaling and rotation. */
+    /**
+     * Sets the origin x in relation to the sprite's position for scaling and rotation.
+     */
     public void setOriginX(float x) {
         setOrigin(x, getOriginY());
     }
 
-    /** Sets the origin y in relation to the sprite's position for scaling and rotation. */
+    /**
+     * Sets the origin y in relation to the sprite's position for scaling and rotation.
+     */
     public void setOriginY(float y) {
-        setOrigin(getOriginX(),y);
+        setOrigin(getOriginX(), y);
     }
 
-    /** Sets the scale along both axises where 1 = normal Size */
+    /**
+     * Sets the scale along both axises where 1 = normal Size
+     */
     public void setScale(float scaleX, float scaleY) {
-        polygon.setScale(scaleX,scaleY);
+        polygon.setScale(scaleX, scaleY);
         dirtyAttributes = true;
     }
 
-    /** Sets the scale along the x axis where 1 = normal Size */
+    /**
+     * Sets the scale along the x axis where 1 = normal Size
+     */
     public void setScaleX(float scaleX) {
         polygon.setScale(scaleX, getScaleY());
         dirtyAttributes = true;
     }
 
-    /** Sets the scale along the y axis where 1 = normal Size */
+    /**
+     * Sets the scale along the y axis where 1 = normal Size
+     */
     public void setScaleY(float scaleY) {
-        polygon.setScale(getScaleX(),scaleY);
+        polygon.setScale(getScaleX(), scaleY);
         dirtyAttributes = true;
     }
 
-    /** Adds the specified scale to the current scale. */
+    /**
+     * Adds the specified scale to the current scale.
+     */
     public void scaleBy(float scaleXY) {
         polygon.scale(scaleXY);
         dirtyAttributes = true;
     }
 
-    /** Adds the specified scale to the current scale. */
+    /**
+     * Adds the specified scale to the current scale.
+     */
     public void scaleBy(float scaleX, float scaleY) {
-        polygon.setScale(getScaleX() + scaleX, getScaleY()+scaleY);
+        polygon.setScale(getScaleX() + scaleX, getScaleY() + scaleY);
         dirtyAttributes = true;
     }
 
@@ -514,7 +540,9 @@ public class RepeatablePolygonSprite implements Disposable {
         dirtyAttributes = true;
     }
 
-    /** Adds the specified rotation to the current rotation. */
+    /**
+     * Adds the specified rotation to the current rotation.
+     */
     public void rotateBy(float amountInDegrees) {
         polygon.rotate(amountInDegrees);
         dirtyAttributes = true;
@@ -525,8 +553,7 @@ public class RepeatablePolygonSprite implements Disposable {
      *
      * @param wrapType - a type of WrapType
      */
-    public void setWrapTypeX(int wrapType) {
-        WrapType.validate(wrapType);
+    public void setWrapTypeX(WrapType wrapType) {
         this.wrapTypeX = wrapType;
         dirtyGrid = true;
     }
@@ -536,8 +563,7 @@ public class RepeatablePolygonSprite implements Disposable {
      *
      * @param wrapType - a type of WrapType
      */
-    public void setWrapTypeY(int wrapType) {
-        WrapType.validate(wrapType);
+    public void setWrapTypeY(WrapType wrapType) {
         this.wrapTypeY = wrapType;
         dirtyGrid = true;
     }
@@ -550,11 +576,11 @@ public class RepeatablePolygonSprite implements Disposable {
         dirtyAttributes = true;
     }
 
-    public int getWrapTypeX() {
+    public WrapType getWrapTypeX() {
         return wrapTypeX;
     }
 
-    public int getWrapTypeY() {
+    public WrapType getWrapTypeY() {
         return wrapTypeY;
     }
 
@@ -568,6 +594,14 @@ public class RepeatablePolygonSprite implements Disposable {
 
     public float getTextureOffsetY() {
         return textureOffset.y;
+    }
+
+    public float getTextureWidth() {
+        return textureWidth;
+    }
+
+    public float getTextureHeight() {
+        return textureHeight;
     }
 
     public float getX() {
@@ -629,21 +663,5 @@ public class RepeatablePolygonSprite implements Disposable {
 
     public Rectangle getBoundingRectangle() {
         return this.boundingRect;
-    }
-
-    public static class WrapType {
-        /**
-         * The Type how a texture is drawn over the Polygon along one axis
-         */
-
-        public static final int STRETCH = 0;
-        public static final int REPEAT = 1;
-        public static final int REPEAT_MIRRORED = 2;
-
-        public static void validate(int type) {
-            if (!((type == STRETCH) | (type == REPEAT) | (type == REPEAT_MIRRORED))) {
-                throw new IllegalArgumentException("The given WrapType is not valid: " + type);
-            }
-        }
     }
 }

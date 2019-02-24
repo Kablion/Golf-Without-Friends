@@ -1,0 +1,126 @@
+{
+name: Erste Map
+maxShootSpeed: 200
+ball: {
+	position: {
+		y: 85
+	}
+}
+camera: {
+	position: {
+		x: 69.69621
+		y: 178.32985
+	}
+}
+entities: [
+	{
+		class: de.kablion.golf.data.actors.GroundData
+		vertices: [ -50, 200, 50, -200 ]
+		position: {
+			y: 150
+		}
+	}
+	{
+		class: de.kablion.golf.data.actors.GroundData
+		vertices: [ 200, 50, -200, -50 ]
+		position: {
+			x: 150
+			y: 300
+		}
+	}
+	{
+		class: de.kablion.golf.data.actors.HoleData
+		position: {
+			x: 300
+			y: 300
+		}
+	}
+	{
+		class: de.kablion.golf.data.actors.MagnetData
+		position: {
+			x: 300
+			y: 300
+		}
+		range: 50
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		position: {
+			x: -50
+			y: 290
+		}
+		length: 100
+		rotation: 45
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		position: {
+			x: 25
+			y: 350
+		}
+		length: 200
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		position: {
+			x: 50
+			y: 250
+		}
+		length: 300
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		position: {
+			x: 350
+			y: 250
+		}
+		length: 100
+		rotation: 90
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 25
+			y: 355
+		}
+		length: 15
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: -50
+			y: 290
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 50
+			y: 250
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 225
+			y: 350
+		}
+		length: 10
+	}
+	{
+		class: de.kablion.golf.data.actors.WallData
+		isCircle: true
+		position: {
+			x: 350
+			y: 250
+		}
+		length: 10
+	}
+]
+}

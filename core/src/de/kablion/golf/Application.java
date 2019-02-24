@@ -1,68 +1,57 @@
 package de.kablion.golf;
 
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeType;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.utils.viewport.ExtendViewport;
-import com.badlogic.gdx.utils.viewport.FillViewport;
-import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+
+import java.util.HashMap;
 
 import de.kablion.golf.screens.GameScreen;
 import de.kablion.golf.screens.LoadingScreen;
 import de.kablion.golf.screens.MainMenuScreen;
-
-import static de.kablion.golf.utils.Constants.*;
+import de.kablion.golf.utils.Constants;
 
 public class Application extends Game {
 
-	public SpriteBatch batch;
-	public PolygonSpriteBatch polyBatch;
-	public OrthographicCamera cameraUI;
-	public AssetManager assets;
-	public ShapeRenderer shapeRenderer;
+    /**
+     * Handles the Life Circle of The whole Game
+     */
 
-	public BitmapFont font24;
-	public BitmapFont font48;
+    // Res Heavy Objects that have to be initialized only once
+    public SpriteBatch batch;
+    public PolygonSpriteBatch polyBatch;
+    public ShapeRenderer shapeRenderer;
+    public AssetManager assets;
+    public HashMap<Constants.Skins, Skin> skins;
 
-	//Screens
-	public LoadingScreen loadingScreen;
-	public MainMenuScreen mainMenuScreen;
-	public GameScreen gameScreen;
-	
-	@Override
-	public void create () {
-		assets = new AssetManager();
-		batch = new SpriteBatch();
-		polyBatch = new PolygonSpriteBatch();
+    //Screens
+    public LoadingScreen loadingScreen;
+    public MainMenuScreen mainMenuScreen;
+    public GameScreen gameScreen;
 
-        cameraUI = new OrthographicCamera();
-		cameraUI.setToOrtho(false, UI_WIDTH,UI_HEIGHT);
+    @Override
+    public void create() {
+        batch = new SpriteBatch();
+        polyBatch = new PolygonSpriteBatch();
+        shapeRenderer = new ShapeRenderer();
+        assets = new AssetManager();
+        skins = new HashMap<Constants.Skins, Skin>();
 
-		initFonts();
+        loadingScreen = new LoadingScreen(this);
+        mainMenuScreen = new MainMenuScreen(this);
+        gameScreen = new GameScreen(this);
 
-		shapeRenderer = new ShapeRenderer();
-
-		loadingScreen = new LoadingScreen(this);
-		mainMenuScreen = new MainMenuScreen(this);
-		gameScreen = new GameScreen(this);
-
+        // the Game Starts with the LoadingScreen
         this.setScreen(loadingScreen);
-	}
+    }
 
-	@Override
-	public void render () {
-		super.render();
-		cameraUI.update();
-	}
+    @Override
+    public void render() {
+            super.render();
+    }
 
     @Override
     public void resize(int width, int height) {
@@ -70,26 +59,16 @@ public class Application extends Game {
     }
 
     @Override
-	public void dispose() {
-		batch.dispose();
-		polyBatch.dispose();
-		assets.dispose();
+    public void dispose() {
+        super.dispose();
+        loadingScreen.dispose();
+        mainMenuScreen.dispose();
+        gameScreen.dispose();
 
-		loadingScreen.dispose();
-		mainMenuScreen.dispose();
-		gameScreen.dispose();
-	}
-
-	private void initFonts() {
-		FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/game_continue.ttf"));
-		FreeTypeFontGenerator.FreeTypeFontParameter params = new FreeTypeFontGenerator.FreeTypeFontParameter();
-
-		params.size = 50;
-		params.color = Color.BLACK;
-		font24 = generator.generateFont(params);
-		params.size = 100;
-		font48 = generator.generateFont(params);
-		generator.dispose();
-	}
+        batch.dispose();
+        polyBatch.dispose();
+        shapeRenderer.dispose();
+        assets.dispose();
+    }
 
 }
