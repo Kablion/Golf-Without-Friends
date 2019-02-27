@@ -17,6 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Timer;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 
@@ -90,14 +91,17 @@ public class MainMenuScreen implements Screen {
 
     private void initStage() {
         rootTable.setFillParent(true);
-        rootTable.add(menuTable).center().top().width(UI_WIDTH*0.75f).padTop(UI_HEIGHT*0.12f).expandY();
         stage.addActor(rootTable);
 
         // Title Label
         titleLabel = new Label("Test", app.skins.get(Skins.MENU), "big-font", Color.BLACK);
-        menuTable.add(titleLabel).padBottom(40);
-        menuTable.row();
-        menuTable.addAction(sequence(alpha(0), parallel(fadeIn(.5f), moveBy(0, -20, .5f, Interpolation.pow5Out))));
+        titleLabel.setAlignment(Align.center);
+        rootTable.add(titleLabel).padBottom(40);
+        rootTable.row();
+        rootTable.addAction(sequence(alpha(0), parallel(fadeIn(.5f), moveBy(0, -20, .5f, Interpolation.pow5Out))));
+
+        menuTable.align(Align.top);
+        rootTable.add(menuTable).center().top().width(UI_WIDTH*0.75f).expandY();
     }
 
     private void update(float delta) {
@@ -168,7 +172,7 @@ public class MainMenuScreen implements Screen {
                 break;
 
             case PLAY:
-                titleLabel.setText("Want to play a World or just a Map?");
+                titleLabel.setText("Play a World \nor just one Map?");
 
                 // Map Button
                 tempButton = new TextButton("A Map", app.skins.get(Skins.MENU), "default");

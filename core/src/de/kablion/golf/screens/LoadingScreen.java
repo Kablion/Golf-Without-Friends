@@ -5,8 +5,10 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.ProgressBar;
@@ -108,7 +110,15 @@ public class LoadingScreen implements Screen {
 
             //Skins
             app.skins.put(Skins.HUD, new Skin(Gdx.files.internal(HUD_SKIN_PATH), (TextureAtlas) app.assets.get(HUD_ATLAS_PATH)));
-            app.skins.put(Skins.MENU, new Skin(Gdx.files.internal(MENU_SKIN_PATH), (TextureAtlas) app.assets.get(MENU_ATLAS_PATH)));
+            app.skins.put(Skins.MENU, new Skin(Gdx.files.internal(MENU_SKIN_PATH), (TextureAtlas) app.assets.get(MENU_ATLAS_PATH)));//Fonts
+            FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/game_continue.ttf"));
+            FreeTypeFontGenerator.FreeTypeFontParameter params = new FreeTypeFontGenerator.FreeTypeFontParameter();
+            params.size = 25;
+            params.color = Color.BLACK;
+            app.skins.get(Skins.MENU).add("default-font", generator.generateFont(params));
+            params.size = 50;
+            app.skins.get(Skins.MENU).add("big-font", generator.generateFont(params));
+            generator.dispose();
 
             // If everything is loaded continue to the MainMenu
             app.setScreen(app.mainMenuScreen);
